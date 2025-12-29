@@ -1,123 +1,241 @@
-import { useState } from "react";
-import { Link } from "react-router";
+"use client";
+
+import * as React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { Link, useNavigate } from "react-router";
+import { authClient } from "../../lib/auth-client";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Label } from "../../components/ui/label";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { loginSchema, type LoginFormValues } from "../../utils/validations";
 
+/**
+ * Login Page Component
+ * Handles user authentication with username/email and password
+ * Supports "Remember Me" functionality
+ */
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{
-    identifier?: string;
-    password?: string;
-  }>({});
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const validateForm = () => {
-    const newErrors: { identifier?: string; password?: string } = {};
+  // Initialize form with React Hook Form + Zod validation
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      identifier: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
 
-    if (!identifier.trim()) {
-      newErrors.identifier = "Username atau email harus diisi";
+  /**
+   * Handle form submission
+   * Determines if identifier is email or username and calls appropriate auth method
+   */
+  async function onSubmit(values: LoginFormValues) {
+    setIsLoading(true);
+
+    try {
+      // Detect if identifier is email or username
+      const isEmail = values.identifier.includes("@");
+
+      let result;
+
+      // Call appropriate sign-in method
+      if (isEmail) {
+        result = await authClient.signIn.email({
+          email: values.identifier,
+          password: values.password,
+          rememberMe: values.rememberMe, // ✅ Type-safe boolean
+        });
+      } else {
+        result = await authClient.signIn.username({
+          username: values.identifier,
+          password: values.password,
+          rememberMe: values.rememberMe, // ✅ Type-safe boolean
+        });
+      }
+
+      const { data: res, error } = result;
+
+      // Handle authentication error
+      if (error) {
+        toast.error(error.message || "Gagal masuk. Periksa kembali akun Anda.");
+        return;
+      }
+
+      // Handle successful authentication
+      if (res) {
+        toast.success("Berhasil masuk!");
+
+        // Optional: You can access user data here
+        // console.log("User data:", res.user);
+
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      // Handle unexpected errors
+      console.error("Login error:", err);
+      toast.error("Terjadi kesalahan. Silakan coba lagi.");
+    } finally {
+      setIsLoading(false);
     }
-
-    if (!password) {
-      newErrors.password = "Password harus diisi";
-    } else if (password.length < 6) {
-      newErrors.password = "Password minimal 6 karakter";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (validateForm()) {
-      console.log("Login attempt with:", { identifier, password });
-      // TODO: Add actual authentication logic here
-    }
-  };
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <Card className="border-2">
-          <CardHeader className="space-y-2 pb-6">
-            <CardTitle className="text-3xl font-bold tracking-tight">
-              Masuk
-            </CardTitle>
-            <CardDescription className="text-base">
-              Masukkan username atau email dan password untuk mengakses sistem
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="identifier" className="font-semibold">
-                  Username atau Email
-                </Label>
-                <Input
-                  id="identifier"
-                  type="text"
-                  placeholder="username atau email@example.com"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className={`h-11 ${
-                    errors.identifier ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.identifier && (
-                  <p className="text-sm text-red-600 font-medium">
-                    {errors.identifier}
-                  </p>
+      <Card className="w-full sm:max-w-md border-2">
+        {/* Card Header */}
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold">Masuk</CardTitle>
+          <CardDescription className="text-base">
+            Gunakan username atau email untuk mengakses sistem.
+          </CardDescription>
+        </CardHeader>
+
+        {/* Card Content - Form */}
+        <CardContent>
+          <form
+            id="login-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+          >
+            <FieldGroup>
+              {/* Field: Username atau Email */}
+              <Controller
+                name="identifier"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="identifier">
+                      Username atau Email
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="identifier"
+                      placeholder="admin atau email@example.com"
+                      autoComplete="username"
+                      disabled={isLoading}
+                      aria-invalid={fieldState.invalid}
+                      aria-describedby={
+                        fieldState.invalid ? "identifier-error" : undefined
+                      }
+                    />
+                    {fieldState.invalid && (
+                      <FieldError
+                        id="identifier-error"
+                        errors={[fieldState.error]}
+                      />
+                    )}
+                  </Field>
                 )}
-              </div>
+              />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="font-semibold">
-                    Password
-                  </Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Masukkan password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`h-11 ${errors.password ? "border-red-500" : ""}`}
-                />
-                {errors.password && (
-                  <p className="text-sm text-red-600 font-medium">
-                    {errors.password}
-                  </p>
+              {/* Field: Password */}
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      disabled={isLoading}
+                      aria-invalid={fieldState.invalid}
+                      aria-describedby={
+                        fieldState.invalid ? "password-error" : undefined
+                      }
+                    />
+                    {fieldState.invalid && (
+                      <FieldError
+                        id="password-error"
+                        errors={[fieldState.error]}
+                      />
+                    )}
+                  </Field>
                 )}
-              </div>
+              />
 
-              <Button type="submit" className="w-full h-11 font-semibold">
-                Masuk
-              </Button>
+              {/* Field: Remember Me Checkbox */}
+              <Controller
+                name="rememberMe"
+                control={form.control}
+                render={({ field }) => (
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      className="h-4 w-4 rounded border-input bg-background cursor-pointer"
+                      checked={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoading}
+                      aria-label="Ingat saya di perangkat ini"
+                    />
+                    <label
+                      htmlFor="rememberMe"
+                      className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Ingat saya di perangkat ini
+                    </label>
+                  </div>
+                )}
+              />
+            </FieldGroup>
+          </form>
+        </CardContent>
 
-              <div className="text-center text-sm text-muted-foreground">
-                Belum punya akun?{" "}
-                <Link
-                  to="/register"
-                  className="font-semibold text-foreground hover:underline"
-                >
-                  Daftar di sini
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Card Footer - Submit Button & Register Link */}
+        <CardFooter className="flex flex-col gap-4">
+          <Button
+            className="w-full h-11 font-semibold"
+            type="submit"
+            form="login-form"
+            disabled={isLoading}
+          >
+            {isLoading ? "Memproses..." : "Masuk"}
+          </Button>
+
+          {/* Forgot Password Link */}
+          <div className="text-center text-sm text-muted-foreground">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-foreground hover:underline"
+            >
+              Lupa password?
+            </Link>
+          </div>
+
+          {/* Register Link */}
+          <div className="text-center text-sm text-muted-foreground">
+            Belum punya akun?{" "}
+            <Link
+              to="/register"
+              className="font-semibold text-foreground hover:underline"
+            >
+              Daftar di sini
+            </Link>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

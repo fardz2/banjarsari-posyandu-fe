@@ -1,11 +1,12 @@
+import { createBrowserRouter, Navigate } from "react-router";
 import LandingPage from "../pages/public/landing";
 import Login from "../pages/auth/login";
-
-import { createBrowserRouter, Navigate } from "react-router";
 import NotFound from "../pages/not-found";
+import Dashboard from "../pages/protected/dashboard/dashboard";
+import ProtectedLayout from "../components/layout/protected/protected-layout";
 
 const router = createBrowserRouter([
-  // Public routes
+  // --- PUBLIC ROUTES ---
   {
     path: "/",
     element: <LandingPage />,
@@ -15,10 +16,21 @@ const router = createBrowserRouter([
     element: <Login />,
   },
 
-  // Redirect dari route kosong atau salah ke home (opsional)
-  { path: "", element: <Navigate to="/" replace /> },
+  // --- PROTECTED ROUTES (Hanya bisa diakses jika sudah login) ---
+  {
+    element: <ProtectedLayout />, // Bungkus semua rute di bawah ini
+    children: [
+      {
+        path: "/dashboard",
+        element: <Dashboard />,
+      },
+      // Tambahkan rute terproteksi lainnya di sini
+      // { path: "/profile", element: <Profile /> },
+    ],
+  },
 
-  // Catch-all route: HARUS di paling bawah!
+  // --- UTILS ---
+  { path: "", element: <Navigate to="/" replace /> },
   {
     path: "*",
     element: <NotFound />,
