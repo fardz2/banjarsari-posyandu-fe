@@ -22,6 +22,7 @@ import {
 } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
+import { Checkbox } from "../../components/ui/checkbox";
 import { loginSchema, type LoginFormValues } from "../../utils/validations";
 
 /**
@@ -181,12 +182,10 @@ export default function LoginPage() {
                 control={form.control}
                 render={({ field }) => (
                   <div className="flex items-center space-x-2 pt-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="rememberMe"
-                      className="h-4 w-4 rounded border-input bg-background cursor-pointer"
                       checked={field.value}
-                      onChange={field.onChange}
+                      onCheckedChange={field.onChange}
                       disabled={isLoading}
                       aria-label="Ingat saya di perangkat ini"
                     />

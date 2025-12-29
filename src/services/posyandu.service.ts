@@ -1,39 +1,74 @@
-
-
 /**
  * Posyandu Service
  * Service layer untuk mengelola data posyandu
  */
 
 import api from "../lib/axios";
-import type { ApiResponse, PaginatedResponse, PaginationParams, Posyandu } from "../types";
+import type { 
+  Posyandu,
+  CreatePosyanduInput,
+  UpdatePosyanduInput,
+  ApiResponse, 
+  PaginatedResponse, 
+  PaginationParams 
+} from "../types";
 
-// Get all posyandu with pagination
-export const getAllPosyandu = async (params?: PaginationParams): Promise<PaginatedResponse<Posyandu>> => {
-  const response = await api.get<PaginatedResponse<Posyandu>>("/posyandu", { params });
-  return response;
+// ============================================================================
+// POSYANDU ENDPOINTS
+// ============================================================================
+
+/**
+ * Get all posyandu with pagination
+ * GET /api/v1/posyandu
+ * Roles: All authenticated users
+ */
+export const getAllPosyandu = async (
+  params?: PaginationParams
+): Promise<PaginatedResponse<Posyandu>> => {
+  return await api.get<PaginatedResponse<Posyandu>>("/posyandu", { params });
 };
 
-// Get posyandu by ID
-export const getPosyanduById = async (id: string): Promise<ApiResponse<Posyandu>> => {
-  const response = await api.get<ApiResponse<Posyandu>>(`/posyandu/${id}`);
-  return response;
+/**
+ * Get posyandu by ID
+ * GET /api/v1/posyandu/:id
+ * Roles: All authenticated users
+ */
+export const getPosyanduById = async (
+  id: number
+): Promise<ApiResponse<Posyandu>> => {
+  return await api.get<ApiResponse<Posyandu>>(`/posyandu/${id}`);
 };
 
-// Create new posyandu
-export const createPosyandu = async (data: Partial<Posyandu>): Promise<ApiResponse<Posyandu>> => {
-  const response = await api.post<ApiResponse<Posyandu>>("/posyandu", data);
-  return response;
+/**
+ * Create new posyandu
+ * POST /api/v1/posyandu
+ * Roles: SUPER_ADMIN only
+ */
+export const createPosyandu = async (
+  data: CreatePosyanduInput
+): Promise<ApiResponse<Posyandu>> => {
+  return await api.post<ApiResponse<Posyandu>>("/posyandu", data);
 };
 
-// Update posyandu
-export const updatePosyandu = async (id: string, data: Partial<Posyandu>): Promise<ApiResponse<Posyandu>> => {
-  const response = await api.put<ApiResponse<Posyandu>>(`/posyandu/${id}`, data);
-  return response;
+/**
+ * Update posyandu
+ * PUT /api/v1/posyandu/:id
+ * Roles: SUPER_ADMIN only
+ */
+export const updatePosyandu = async (
+  id: number,
+  data: UpdatePosyanduInput
+): Promise<ApiResponse<Posyandu>> => {
+  return await api.put<ApiResponse<Posyandu>>(`/posyandu/${id}`, data);
 };
 
-// Delete posyandu
-export const deletePosyandu = async (id: string): Promise<ApiResponse<void>> => {
-  const response = await api.delete<ApiResponse<void>>(`/posyandu/${id}`);
-  return response;
+/**
+ * Delete posyandu
+ * DELETE /api/v1/posyandu/:id
+ * Roles: SUPER_ADMIN only
+ */
+export const deletePosyandu = async (
+  id: number
+): Promise<ApiResponse<void>> => {
+  return await api.delete<ApiResponse<void>>(`/posyandu/${id}`);
 };

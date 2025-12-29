@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { ApiResponse, Pengukuran } from "../../types";
+import type { ApiResponse, Pengukuran, CreatePengukuranInput, UpdatePengukuranInput } from "../../types";
 import { createPengukuran, deletePengukuran, updatePengukuran } from "../../services";
 import { queryKeys } from "../../lib/react-query";
 
@@ -9,16 +9,16 @@ import { queryKeys } from "../../lib/react-query";
  * Hook untuk create pengukuran baru
  */
 export const useCreatePengukuran = (
-  options?: Omit<UseMutationOptions<ApiResponse<Pengukuran>, Error, Partial<Pengukuran>>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<Pengukuran>, Error, CreatePengukuranInput>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<Pengukuran>) => createPengukuran(data),
+    mutationFn: (data: CreatePengukuranInput) => createPengukuran(data),
     onSuccess: (_data, variables) => {
       // Invalidate pengukuran list untuk anak terkait
-      if (variables.anakId) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.list(variables.anakId) });
+      if (variables.anakNik) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.list(variables.anakNik) });
       }
       toast.success("Data pengukuran berhasil ditambahkan!");
     },
@@ -33,18 +33,16 @@ export const useCreatePengukuran = (
  * Hook untuk update pengukuran
  */
 export const useUpdatePengukuran = (
-  options?: Omit<UseMutationOptions<ApiResponse<Pengukuran>, Error, { id: string; data: Partial<Pengukuran> }>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<Pengukuran>, Error, { id: number; data: UpdatePengukuranInput }>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Pengukuran> }) => updatePengukuran(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdatePengukuranInput }) => updatePengukuran(id, data),
     onSuccess: (_data, variables) => {
       // Invalidate detail dan list
-      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.detail(variables.id) });
-      if (variables.data.anakId) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.list(variables.data.anakId) });
-      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.detail(variables.id.toString()) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.lists() });
       toast.success("Data pengukuran berhasil diperbarui!");
     },
     onError: (error: any) => {
@@ -58,18 +56,15 @@ export const useUpdatePengukuran = (
  * Hook untuk delete pengukuran
  */
 export const useDeletePengukuran = (
-  anakId?: string,
-  options?: Omit<UseMutationOptions<ApiResponse<void>, Error, string>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<void>, Error, number>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deletePengukuran(id),
+    mutationFn: (id: number) => deletePengukuran(id),
     onSuccess: () => {
       // Invalidate pengukuran list
-      if (anakId) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.list(anakId) });
-      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.lists() });
       toast.success("Data pengukuran berhasil dihapus!");
     },
     onError: (error: any) => {

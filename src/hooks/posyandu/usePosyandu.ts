@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMu
 import { toast } from "sonner";
 import { queryKeys } from "../../lib/react-query";
 import { getAllPosyandu, getPosyanduById, createPosyandu, updatePosyandu, deletePosyandu } from "../../services";
-import type { Posyandu, PaginatedResponse, ApiResponse, PaginationParams } from "../../types";
+import type { Posyandu, CreatePosyanduInput, UpdatePosyanduInput, PaginatedResponse, ApiResponse, PaginationParams } from "../../types";
 
 /**
  * Hook untuk fetch semua posyandu dengan pagination
@@ -22,11 +22,11 @@ export const usePosyandu = (
  * Hook untuk fetch detail posyandu by ID
  */
 export const usePosyanduDetail = (
-  id: string,
+  id: number,
   options?: Omit<UseQueryOptions<ApiResponse<Posyandu>>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
-    queryKey: queryKeys.posyandu.detail(id),
+    queryKey: queryKeys.posyandu.detail(id.toString()),
     queryFn: () => getPosyanduById(id),
     enabled: !!id,
     ...options,
@@ -37,12 +37,12 @@ export const usePosyanduDetail = (
  * Hook untuk create posyandu baru
  */
 export const useCreatePosyandu = (
-  options?: Omit<UseMutationOptions<ApiResponse<Posyandu>, Error, Partial<Posyandu>>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<Posyandu>, Error, CreatePosyanduInput>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<Posyandu>) => createPosyandu(data),
+    mutationFn: (data: CreatePosyanduInput) => createPosyandu(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.posyandu.lists() });
       toast.success("Data posyandu berhasil ditambahkan!");
@@ -58,15 +58,15 @@ export const useCreatePosyandu = (
  * Hook untuk update posyandu
  */
 export const useUpdatePosyandu = (
-  options?: Omit<UseMutationOptions<ApiResponse<Posyandu>, Error, { id: string; data: Partial<Posyandu> }>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<Posyandu>, Error, { id: number; data: UpdatePosyanduInput }>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Posyandu> }) => updatePosyandu(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdatePosyanduInput }) => updatePosyandu(id, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.posyandu.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.posyandu.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.posyandu.detail(variables.id.toString()) });
       toast.success("Data posyandu berhasil diperbarui!");
     },
     onError: (error: any) => {
@@ -80,12 +80,12 @@ export const useUpdatePosyandu = (
  * Hook untuk delete posyandu
  */
 export const useDeletePosyandu = (
-  options?: Omit<UseMutationOptions<ApiResponse<void>, Error, string>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<void>, Error, number>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deletePosyandu(id),
+    mutationFn: (id: number) => deletePosyandu(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.posyandu.lists() });
       toast.success("Data posyandu berhasil dihapus!");

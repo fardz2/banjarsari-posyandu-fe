@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { Anak, ApiResponse } from "../../types";
+import type { Anak, CreateAnakInput, UpdateAnakInput, ApiResponse } from "../../types";
 import { createAnak, deleteAnak, updateAnak } from "../../services";
 import { queryKeys } from "../../lib/react-query";
 
@@ -9,12 +9,12 @@ import { queryKeys } from "../../lib/react-query";
  * Hook untuk create anak baru
  */
 export const useCreateAnak = (
-  options?: Omit<UseMutationOptions<ApiResponse<Anak>, Error, Partial<Anak>>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<Anak>, Error, CreateAnakInput>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<Anak>) => createAnak(data),
+    mutationFn: (data: CreateAnakInput) => createAnak(data),
     onSuccess: () => {
       // Invalidate anak list untuk refresh data
       queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
@@ -31,16 +31,16 @@ export const useCreateAnak = (
  * Hook untuk update data anak
  */
 export const useUpdateAnak = (
-  options?: Omit<UseMutationOptions<ApiResponse<Anak>, Error, { id: string; data: Partial<Anak> }>, "mutationFn">
+  options?: Omit<UseMutationOptions<ApiResponse<Anak>, Error, { nik: string; data: UpdateAnakInput }>, "mutationFn">
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Anak> }) => updateAnak(id, data),
+    mutationFn: ({ nik, data }: { nik: string; data: UpdateAnakInput }) => updateAnak(nik, data),
     onSuccess: (_data, variables) => {
       // Invalidate list dan detail
       queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.anak.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.anak.detail(variables.nik) });
       toast.success("Data anak berhasil diperbarui!");
     },
     onError: (error: any) => {
@@ -59,7 +59,7 @@ export const useDeleteAnak = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteAnak(id),
+    mutationFn: (nik: string) => deleteAnak(nik),
     onSuccess: () => {
       // Invalidate anak list
       queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });

@@ -7,7 +7,7 @@ import type { IbuHamil, PaginatedResponse, ApiResponse, PaginationParams } from 
  * Hook untuk fetch semua data ibu hamil dengan pagination
  */
 export const useIbuHamil = (
-  params?: PaginationParams,
+  params?: PaginationParams & { posyanduId?: number; rw?: string },
   options?: Omit<UseQueryOptions<PaginatedResponse<IbuHamil>>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
@@ -21,11 +21,11 @@ export const useIbuHamil = (
  * Hook untuk fetch detail ibu hamil by ID
  */
 export const useIbuHamilDetail = (
-  id: string,
+  id: number,
   options?: Omit<UseQueryOptions<ApiResponse<IbuHamil>>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
-    queryKey: queryKeys.ibuHamil.detail(id),
+    queryKey: queryKeys.ibuHamil.detail(id.toString()),
     queryFn: () => getIbuHamilById(id),
     enabled: !!id,
     ...options,

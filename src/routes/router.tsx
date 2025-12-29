@@ -3,7 +3,13 @@ import LandingPage from "../pages/public/landing";
 import Login from "../pages/auth/login";
 import NotFound from "../pages/not-found";
 import Dashboard from "../pages/protected/dashboard/dashboard";
-import ProtectedLayout from "../components/layout/protected/protected-layout";
+import UsersListPage from "../pages/protected/users/users-list";
+import PosyanduListPage from "../pages/protected/posyandu/posyandu-list";
+
+import AnakListPage from "../pages/protected/anak/anak-list";
+import AnakDetail from "../pages/protected/anak/anak-detail";
+
+import DashboardLayout from "../components/layout/protected/dashboard-layout";
 
 const router = createBrowserRouter([
   // --- PUBLIC ROUTES ---
@@ -18,11 +24,27 @@ const router = createBrowserRouter([
 
   // --- PROTECTED ROUTES (Hanya bisa diakses jika sudah login) ---
   {
-    element: <ProtectedLayout />, // Bungkus semua rute di bawah ini
+    element: <DashboardLayout />, // Bungkus semua rute di bawah ini
     children: [
       {
         path: "/dashboard",
         element: <Dashboard />,
+      },
+      {
+        path: "/dashboard/users",
+        element: <UsersListPage />,
+      },
+      {
+        path: "/dashboard/posyandu",
+        element: <PosyanduListPage />,
+      },
+      {
+        path: "/dashboard/anak",
+        element: <AnakListPage />,
+      },
+      {
+        path: "/dashboard/anak/:nik",
+        element: <AnakDetail />,
       },
       // Tambahkan rute terproteksi lainnya di sini
       // { path: "/profile", element: <Profile /> },

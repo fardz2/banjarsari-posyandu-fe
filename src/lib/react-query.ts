@@ -94,4 +94,24 @@ export const queryKeys = {
     details: () => [...queryKeys.posyandu.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.posyandu.details(), id] as const,
   },
+  
+  // User
+  user: {
+    all: ["user"] as const,
+    lists: () => [...queryKeys.user.all, "list"] as const,
+    list: (filters: string) => [...queryKeys.user.lists(), { filters }] as const,
+    details: () => [...queryKeys.user.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.user.details(), id] as const,
+    me: () => [...queryKeys.user.all, "me"] as const,
+  },
+  
+  // Ortu (Orang Tua)
+  ortu: {
+    all: ["ortu"] as const,
+    lists: () => [...queryKeys.ortu.all, "list"] as const,
+    list: (filters: string) => [...queryKeys.ortu.lists(), { filters }] as const,
+    details: () => [...queryKeys.ortu.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.ortu.details(), id] as const,
+    me: () => [...queryKeys.ortu.all, "me"] as const,
+  },
 } as const;

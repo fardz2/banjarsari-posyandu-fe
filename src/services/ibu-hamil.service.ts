@@ -1,74 +1,77 @@
-
-
 /**
  * Ibu Hamil Service
  * Service layer untuk mengelola data ibu hamil
  */
 
 import api from "../lib/axios";
-import type { ApiResponse, IbuHamil, PaginatedResponse, PaginationParams, PemeriksaanIbuHamil } from "../types";
+import type { 
+  IbuHamil,
+  CreateIbuHamilInput,
+  UpdateIbuHamilInput,
+  ApiResponse, 
+  PaginatedResponse, 
+  PaginationParams 
+} from "../types";
 
-// Get all ibu hamil with pagination
-export const getAllIbuHamil = async (params?: PaginationParams): Promise<PaginatedResponse<IbuHamil>> => {
-  const response = await api.get<PaginatedResponse<IbuHamil>>("/ibu-hamil", { params });
-  return response;
-};
+// ============================================================================
+// IBU HAMIL ENDPOINTS
+// ============================================================================
 
-// Get ibu hamil by ID
-export const getIbuHamilById = async (id: string): Promise<ApiResponse<IbuHamil>> => {
-  const response = await api.get<ApiResponse<IbuHamil>>(`/ibu-hamil/${id}`);
-  return response;
-};
-
-// Create new ibu hamil
-export const createIbuHamil = async (data: Partial<IbuHamil>): Promise<ApiResponse<IbuHamil>> => {
-  const response = await api.post<ApiResponse<IbuHamil>>("/ibu-hamil", data);
-  return response;
-};
-
-// Update ibu hamil
-export const updateIbuHamil = async (id: string, data: Partial<IbuHamil>): Promise<ApiResponse<IbuHamil>> => {
-  const response = await api.put<ApiResponse<IbuHamil>>(`/ibu-hamil/${id}`, data);
-  return response;
-};
-
-// Delete ibu hamil
-export const deleteIbuHamil = async (id: string): Promise<ApiResponse<void>> => {
-  const response = await api.delete<ApiResponse<void>>(`/ibu-hamil/${id}`);
-  return response;
+/**
+ * Get all ibu hamil with pagination and filters
+ * GET /api/v1/ibu-hamil
+ * Query params: posyanduId, rw
+ * Roles: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
+ */
+export const getAllIbuHamil = async (
+  params?: PaginationParams & { posyanduId?: number; rw?: string }
+): Promise<PaginatedResponse<IbuHamil>> => {
+  return await api.get<PaginatedResponse<IbuHamil>>("/ibu-hamil", { params });
 };
 
 /**
- * Pemeriksaan Ibu Hamil Service
- * Service layer untuk mengelola data pemeriksaan ibu hamil
+ * Get ibu hamil by ID
+ * GET /api/v1/ibu-hamil/:id
+ * Roles: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
  */
-
-// Get pemeriksaan by ibu hamil ID
-export const getPemeriksaanByIbuHamilId = async (ibuHamilId: string): Promise<ApiResponse<PemeriksaanIbuHamil[]>> => {
-  const response = await api.get<ApiResponse<PemeriksaanIbuHamil[]>>(`/pemeriksaan-ibu-hamil/ibu-hamil/${ibuHamilId}`);
-  return response;
+export const getIbuHamilById = async (
+  id: number
+): Promise<ApiResponse<IbuHamil>> => {
+  return await api.get<ApiResponse<IbuHamil>>(`/ibu-hamil/${id}`);
 };
 
-// Get pemeriksaan by ID
-export const getPemeriksaanIbuHamilById = async (id: string): Promise<ApiResponse<PemeriksaanIbuHamil>> => {
-  const response = await api.get<ApiResponse<PemeriksaanIbuHamil>>(`/pemeriksaan-ibu-hamil/${id}`);
-  return response;
+/**
+ * Create new ibu hamil
+ * POST /api/v1/ibu-hamil
+ * Roles: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
+ */
+export const createIbuHamil = async (
+  data: CreateIbuHamilInput
+): Promise<ApiResponse<IbuHamil>> => {
+  return await api.post<ApiResponse<IbuHamil>>("/ibu-hamil", data);
 };
 
-// Create new pemeriksaan
-export const createPemeriksaanIbuHamil = async (data: Partial<PemeriksaanIbuHamil>): Promise<ApiResponse<PemeriksaanIbuHamil>> => {
-  const response = await api.post<ApiResponse<PemeriksaanIbuHamil>>("/pemeriksaan-ibu-hamil", data);
-  return response;
+/**
+ * Update ibu hamil
+ * PUT /api/v1/ibu-hamil/:id
+ * Roles: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
+ */
+export const updateIbuHamil = async (
+  id: number,
+  data: UpdateIbuHamilInput
+): Promise<ApiResponse<IbuHamil>> => {
+  return await api.put<ApiResponse<IbuHamil>>(`/ibu-hamil/${id}`, data);
 };
 
-// Update pemeriksaan
-export const updatePemeriksaanIbuHamil = async (id: string, data: Partial<PemeriksaanIbuHamil>): Promise<ApiResponse<PemeriksaanIbuHamil>> => {
-  const response = await api.put<ApiResponse<PemeriksaanIbuHamil>>(`/pemeriksaan-ibu-hamil/${id}`, data);
-  return response;
+/**
+ * Delete ibu hamil
+ * DELETE /api/v1/ibu-hamil/:id
+ * Roles: SUPER_ADMIN, ADMIN
+ */
+export const deleteIbuHamil = async (
+  id: number
+): Promise<ApiResponse<void>> => {
+  return await api.delete<ApiResponse<void>>(`/ibu-hamil/${id}`);
 };
 
-// Delete pemeriksaan
-export const deletePemeriksaanIbuHamil = async (id: string): Promise<ApiResponse<void>> => {
-  const response = await api.delete<ApiResponse<void>>(`/pemeriksaan-ibu-hamil/${id}`);
-  return response;
-};
+// Note: Pemeriksaan Ibu Hamil endpoints will be added when backend implements them

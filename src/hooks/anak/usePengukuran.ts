@@ -1,20 +1,34 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import type { ApiResponse, Pengukuran } from "../../types";
+import type { ApiResponse, Pengukuran, PaginatedResponse, PaginationParams } from "../../types";
 import { queryKeys } from "../../lib/react-query";
-import { getPengukuranByAnakId, getPengukuranById } from "../../services";
+import { getAllPengukuran, getPengukuranByAnakNik, getPengukuranById } from "../../services";
 
 
 /**
- * Hook untuk fetch pengukuran by anak ID
+ * Hook untuk fetch all pengukuran with filters
  */
-export const usePengukuranByAnakId = (
-  anakId: string,
+export const usePengukuran = (
+  params?: PaginationParams & { anakNik?: string; startDate?: string; endDate?: string },
+  options?: Omit<UseQueryOptions<PaginatedResponse<Pengukuran>>, "queryKey" | "queryFn">
+) => {
+  return useQuery({
+    queryKey: queryKeys.pengukuran.list(JSON.stringify(params || {})),
+    queryFn: () => getAllPengukuran(params),
+    ...options,
+  });
+};
+
+/**
+ * Hook untuk fetch pengukuran by anak NIK
+ */
+export const usePengukuranByAnakNik = (
+  nik: string,
   options?: Omit<UseQueryOptions<ApiResponse<Pengukuran[]>>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
-    queryKey: queryKeys.pengukuran.list(anakId),
-    queryFn: () => getPengukuranByAnakId(anakId),
-    enabled: !!anakId,
+    queryKey: queryKeys.pengukuran.list(nik),
+    queryFn: () => getPengukuranByAnakNik(nik),
+    enabled: !!nik,
     ...options,
   });
 };
@@ -23,11 +37,11 @@ export const usePengukuranByAnakId = (
  * Hook untuk fetch detail pengukuran by ID
  */
 export const usePengukuranDetail = (
-  id: string,
+  id: number,
   options?: Omit<UseQueryOptions<ApiResponse<Pengukuran>>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
-    queryKey: queryKeys.pengukuran.detail(id),
+    queryKey: queryKeys.pengukuran.detail(id.toString()),
     queryFn: () => getPengukuranById(id),
     enabled: !!id,
     ...options,

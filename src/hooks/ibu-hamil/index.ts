@@ -1,5 +1,4 @@
 // Barrel export for ibu hamil hooks
 export * from "./useIbuHamil";
 export * from "./useIbuHamilMutations";
-export * from "./usePemeriksaanIbuHamil";
-export * from "./usePemeriksaanIbuHamilMutations";
+// Note: Pemeriksaan Ibu Hamil hooks will be added when backend implements them

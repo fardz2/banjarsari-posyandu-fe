@@ -81,14 +81,22 @@ posyandu-fe/
 │   │   │       └── protected-layout.tsx
 │   │   └── ui/              # Reusable UI components (shadcn/ui style)
 │   │       ├── accordion.tsx
+│   │       ├── alert-dialog.tsx  # Alert dialog for confirmations
 │   │       ├── button.tsx
 │   │       ├── card.tsx
+│   │       ├── checkbox.tsx      # Checkbox component (Radix UI)
+│   │       ├── dialog.tsx        # Dialog for modals
 │   │       ├── empty.tsx
 │   │       ├── field.tsx
 │   │       ├── input.tsx
 │   │       ├── label.tsx
 │   │       ├── separator.tsx
-│   │       └── sonner.tsx
+│   │       ├── sheet.tsx         # Sheet/Drawer component
+│   │       ├── sidebar.tsx       # Sidebar navigation component
+│   │       ├── skeleton.tsx      # Loading skeleton
+│   │       ├── sonner.tsx
+│   │       ├── table.tsx         # Data table component
+│   │       └── tooltip.tsx       # Tooltip component
 │   ├── hooks/               # Custom React hooks (TanStack Query)
 │   │   ├── anak/            # Anak-related hooks
 │   │   │   ├── index.ts     # Barrel export
@@ -339,6 +347,32 @@ try {
   console.error(error.userMessage);
 }
 ```
+
+### Available API Endpoints
+
+Backend menyediakan endpoint berikut yang dapat diakses dari frontend:
+
+#### Authentication (`/api/auth/*`)
+
+Dihandle otomatis oleh Better Auth:
+
+- `POST /api/auth/sign-up/email` - Registrasi user baru
+- `POST /api/auth/sign-in/email` - Login dengan email & password
+- `POST /api/auth/sign-out` - Logout user
+- `GET /api/auth/session` - Mendapatkan session user saat ini
+
+#### API Version 1 (`/api/v1`)
+
+**Base URL**: `http://localhost:3001/api/v1`
+
+- **Users** (`/api/v1/users/*`) - User management dan profile
+- **Posyandu** (`/api/v1/posyandu/*`) - Data posyandu
+- **Anak** (`/api/v1/anak/*`) - Data anak/balita
+- **Pengukuran** (`/api/v1/pengukuran/*`) - Pengukuran antropometri anak
+- **Ibu Hamil** (`/api/v1/ibu-hamil/*`) - Data ibu hamil
+- **Ortu** (`/api/v1/ortu/*`) - Data orang tua
+
+> **Note**: Untuk detail lengkap endpoint, parameter, permission matrix, dan response format, lihat [Backend CONTEXT.md](../posyandu-be/CONTEXT.md#2-endpoint-yang-sudah-ada).
 
 ---
 
@@ -943,15 +977,11 @@ const router = createBrowserRouter([
 **File**: `.env`
 
 ```env
+# Base URL untuk Better Auth
 VITE_BASE_URL=http://localhost:3001
-```
 
-Tambahkan environment variables lain sesuai kebutuhan:
-
-```env
+# Base URL untuk API calls (digunakan oleh axios)
 VITE_API_BASE_URL=http://localhost:3001
-VITE_APP_NAME=Posyandu
-# etc.
 ```
 
 ### Available Scripts

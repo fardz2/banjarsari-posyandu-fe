@@ -1,21 +1,14 @@
 /**
- * User Interface
- */
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  name: string;
-  role?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
  * Auth Session Interface
  */
 export interface AuthSession {
-  user: User;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+    role?: string;
+  };
   session: {
     id: string;
     expiresAt: string;
@@ -27,7 +20,13 @@ export interface AuthSession {
  * Login Response from Better-auth
  */
 export interface LoginResponse {
-  user: User;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+    role?: string;
+  };
   session: {
     id: string;
     expiresAt: string;
