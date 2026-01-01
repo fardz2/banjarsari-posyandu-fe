@@ -41,7 +41,7 @@ export const usePengukuranDetail = (
   options?: Omit<UseQueryOptions<ApiResponse<Pengukuran>>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
-    queryKey: queryKeys.pengukuran.detail(id.toString()),
+    queryKey: queryKeys.pengukuran.detail(id),
     queryFn: () => getPengukuranById(id),
     enabled: !!id,
     ...options,

@@ -13,9 +13,18 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 
 import { Button } from "./button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "./pagination";
 
 import { Input } from "./input";
 import {
@@ -39,6 +48,45 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
+
+// Helper function to generate pagination items with ellipsis
+function generatePaginationItems(
+  currentPage: number,
+  totalPages: number
+): (number | "ellipsis")[] {
+  const items: (number | "ellipsis")[] = [];
+
+  if (totalPages <= 7) {
+    // Show all pages if total is 7 or less
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(i);
+    }
+  } else {
+    // Always show first page
+    items.push(1);
+
+    if (currentPage > 3) {
+      items.push("ellipsis");
+    }
+
+    // Show pages around current page
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let i = start; i <= end; i++) {
+      items.push(i);
+    }
+
+    if (currentPage < totalPages - 2) {
+      items.push("ellipsis");
+    }
+
+    // Always show last page
+    items.push(totalPages);
+  }
+
+  return items;
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -136,12 +184,25 @@ export function DataTable<TData, TValue>({
                   {headerGroup.headers.map((header) => {
                     return (
                       <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
+                        {header.isPlaceholder ? null : (
+                          <div
+                            className={
+                              header.column.getCanSort()
+                                ? "cursor-pointer select-none flex items-center gap-2"
+                                : ""
+                            }
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
                               header.column.columnDef.header,
                               header.getContext()
                             )}
+                            {{
+                              asc: " ↑",
+                              desc: " ↓",
+                            }[header.column.getIsSorted() as string] ?? null}
+                          </div>
+                        )}
                       </TableHead>
                     );
                   })}
@@ -168,12 +229,25 @@ export function DataTable<TData, TValue>({
                   {headerGroup.headers.map((header) => {
                     return (
                       <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
+                        {header.isPlaceholder ? null : (
+                          <div
+                            className={
+                              header.column.getCanSort()
+                                ? "cursor-pointer select-none flex items-center gap-2"
+                                : ""
+                            }
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
                               header.column.columnDef.header,
                               header.getContext()
                             )}
+                            {{
+                              asc: " ↑",
+                              desc: " ↓",
+                            }[header.column.getIsSorted() as string] ?? null}
+                          </div>
+                        )}
                       </TableHead>
                     );
                   })}
@@ -211,12 +285,8 @@ export function DataTable<TData, TValue>({
           </Table>
         )}
       </div>
-      <div className="flex items-center justify-between px-2">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
+      <div className="flex items-center justify-between px-2 ">
+        <div className="flex items-center justify-between w-full flex-col lg:flex-row ">
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Rows per page</p>
             <Select
@@ -239,50 +309,52 @@ export function DataTable<TData, TValue>({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Go to first page</span>
-              <ChevronLeft className="h-4 w-4" />
-              <ChevronLeft className="h-4 w-4 -ml-2" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Go to next page</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Go to last page</span>
-              <ChevronRight className="h-4 w-4" />
-              <ChevronRight className="h-4 w-4 -ml-2" />
-            </Button>
-          </div>
+          <Pagination>
+            <PaginationContent className="flex-wrap">
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => table.previousPage()}
+                  aria-disabled={!table.getCanPreviousPage()}
+                  className={
+                    !table.getCanPreviousPage()
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+              {generatePaginationItems(
+                table.getState().pagination.pageIndex + 1,
+                table.getPageCount()
+              ).map((item, index) => (
+                <PaginationItem key={index}>
+                  {item === "ellipsis" ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      onClick={() => table.setPageIndex(item - 1)}
+                      isActive={
+                        item === table.getState().pagination.pageIndex + 1
+                      }
+                      className="cursor-pointer"
+                    >
+                      {item}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => table.nextPage()}
+                  aria-disabled={!table.getCanNextPage()}
+                  className={
+                    !table.getCanNextPage()
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>

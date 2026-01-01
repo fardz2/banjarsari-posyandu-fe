@@ -34,6 +34,12 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = React.useState(false);
 
+  // Get callback URL from query params
+  const [searchParams] = React.useState(
+    () => new URLSearchParams(window.location.search)
+  );
+  const callbackUrl = searchParams.get("callback");
+
   // Initialize form with React Hook Form + Zod validation
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -55,39 +61,48 @@ export default function LoginPage() {
       // Detect if identifier is email or username
       const isEmail = values.identifier.includes("@");
 
-      let result;
+      // Determine redirect URL
+      const redirectUrl = callbackUrl || "/dashboard";
 
-      // Call appropriate sign-in method
+      // Call appropriate sign-in method with fetchOptions to handle redirect after session is set
       if (isEmail) {
-        result = await authClient.signIn.email({
-          email: values.identifier,
-          password: values.password,
-          rememberMe: values.rememberMe, // ✅ Type-safe boolean
-        });
+        await authClient.signIn.email(
+          {
+            email: values.identifier,
+            password: values.password,
+            rememberMe: values.rememberMe,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Berhasil masuk!");
+              navigate(redirectUrl);
+            },
+            onError: (ctx) => {
+              toast.error(
+                ctx.error.message || "Gagal masuk. Periksa kembali akun Anda."
+              );
+            },
+          }
+        );
       } else {
-        result = await authClient.signIn.username({
-          username: values.identifier,
-          password: values.password,
-          rememberMe: values.rememberMe, // ✅ Type-safe boolean
-        });
-      }
-
-      const { data: res, error } = result;
-
-      // Handle authentication error
-      if (error) {
-        toast.error(error.message || "Gagal masuk. Periksa kembali akun Anda.");
-        return;
-      }
-
-      // Handle successful authentication
-      if (res) {
-        toast.success("Berhasil masuk!");
-
-        // Optional: You can access user data here
-        // console.log("User data:", res.user);
-
-        navigate("/dashboard");
+        await authClient.signIn.username(
+          {
+            username: values.identifier,
+            password: values.password,
+            rememberMe: values.rememberMe,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Berhasil masuk!");
+              navigate(redirectUrl);
+            },
+            onError: (ctx) => {
+              toast.error(
+                ctx.error.message || "Gagal masuk. Periksa kembali akun Anda."
+              );
+            },
+          }
+        );
       }
     } catch (err) {
       // Handle unexpected errors

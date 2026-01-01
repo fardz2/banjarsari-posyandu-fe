@@ -15,11 +15,9 @@ export const useCreatePengukuran = (
 
   return useMutation({
     mutationFn: (data: CreatePengukuranInput) => createPengukuran(data),
-    onSuccess: (_data, variables) => {
-      // Invalidate pengukuran list untuk anak terkait
-      if (variables.anakNik) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.list(variables.anakNik) });
-      }
+    onSuccess: (_data, _variables) => {
+      // Invalidate pengukuran list
+      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.lists() });
       toast.success("Data pengukuran berhasil ditambahkan!");
     },
     onError: (error: any) => {
@@ -41,7 +39,7 @@ export const useUpdatePengukuran = (
     mutationFn: ({ id, data }: { id: number; data: UpdatePengukuranInput }) => updatePengukuran(id, data),
     onSuccess: (_data, variables) => {
       // Invalidate detail dan list
-      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.detail(variables.id.toString()) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.pengukuran.lists() });
       toast.success("Data pengukuran berhasil diperbarui!");
     },

@@ -488,3 +488,62 @@ import { useAnak } from "../../hooks/anak/useAnak";
 - [ ] Handle loading dan error states
 - [ ] Leverage automatic cache invalidation
 - [ ] Use React Query DevTools untuk debugging
+
+---
+
+## 🔐 Security Operations
+
+### Rotating API Key
+
+Jika API Key bocor atau perlu dirotasi secara berkala, ikuti langkah berikut:
+
+1.  **Generate Key Baru**: Buat string acak yang aman (bisa gunakan password manager atau command `openssl rand -hex 32`).
+2.  **Update Backend (Zero-Downtime)**:
+    - Edit file `posyandu-be/.env`
+    - Tambahkan key baru dengan pemisah koma: `API_KEY=key-lama,key-baru`
+    - Restart backend. Sekarang kedua key valid.
+3.  **Update Frontend**:
+    - Edit file `posyandu-fe/.env`
+    - Ganti `VITE_API_KEY=key-baru`
+    - Restart frontend.
+4.  **Cleanup (Opsional)**:
+    - Setelah semua user load frontend baru, hapus key lama di backend: `API_KEY=key-baru`
+    - Restart backend lagi.
+5.  **Restart Servers**:
+    - Restart server backend (`npm run dev` atau `pm2 restart`)
+    - Restart server frontend
+6.  **Verifikasi**:
+    - Coba login atau refresh halaman dashboard
+    - Pastikan request API berjalan normal (tidak ada error 403)
+
+---
+
+## 🚀 Deployment Guide (Vercel)
+
+### 1. Frontend (`posyandu-fe`)
+
+Frontend sudah siap deploy. Pastikan Environment Variables di Vercel Dashboard sudah diset:
+
+- `VITE_API_BASE_URL`: URL Backend produksi (misal: `https://posyandu-be.vercel.app`)
+- `VITE_API_KEY`: API Key rahasia (harus sama dengan backend)
+
+### 2. Backend (`posyandu-be`)
+
+Backend sudah dikonfigurasi untuk Vercel (Serverless).
+
+**Langkah Deploy:**
+
+1.  Pastikan file `vercel.json` dan `api/index.ts` sudah ada (sudah dibuatkan otomatis).
+2.  Di Vercel Dashboard, import project `posyandu-be`.
+3.  **Build Settings**:
+    - Framework Preset: `Other`
+    - Build Command: `npm install && npx prisma generate` (PENTING! agar Prisma Client ter-generate)
+    - Output Directory: `dist`
+4.  **Environment Variables** (Wajib):
+    - `DATABASE_URL`: Connection string PostgreSQL database (harus bisa diakses internet, misal Supabase/Neon/Railway).
+    - `BETTER_AUTH_SECRET`: Secret key random.
+    - `BETTER_AUTH_URL`: URL backend (misal: `https://posyandu-be.vercel.app`).
+    - `API_KEY`: Key rahasia.
+
+**Catatan Database Vercel**:
+Karena serverless, koneksi database bisa cepat habis. Disarankan menggunakan **Connection Pooling** (misal Supabase Transaction Mode atau Neon Pooling) pada `DATABASE_URL` Anda.

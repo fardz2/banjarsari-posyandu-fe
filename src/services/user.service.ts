@@ -11,7 +11,8 @@ import type {
   AssignRoleInput,
   ApiResponse, 
   PaginatedResponse, 
-  PaginationParams 
+  PaginationParams,
+  UserFilterParams
 } from "../types";
 
 // ============================================================================
@@ -46,7 +47,7 @@ export const updateCurrentUser = async (
  * Roles: SUPER_ADMIN, ADMIN
  */
 export const getAllUsers = async (
-  params?: PaginationParams
+  params?: PaginationParams & UserFilterParams
 ): Promise<PaginatedResponse<User>> => {
   return await api.get<PaginatedResponse<User>>("/users", { params });
 };

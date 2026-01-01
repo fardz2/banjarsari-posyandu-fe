@@ -1,18 +1,19 @@
-"use client";
-
-import { useMemo } from "react";
-import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router";
+import { useMemo, useState } from "react";
+import { Link, Outlet, useNavigate, useLocation } from "react-router";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  LayoutDashboardIcon,
-  UsersIcon,
-  BuildingIcon,
-  BabyIcon,
-  RulerIcon,
-  HeartIcon,
-  UserIcon,
-  LogOutIcon,
-  UserCircleIcon,
+  LayoutDashboard,
+  Users,
+  Building,
+  Baby,
+  Ruler,
+  Heart,
+  User,
+  LogOut,
+  UserCircle,
+  MessageSquare,
+  ChevronUp,
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,7 +21,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -29,19 +29,36 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "../../ui/sidebar";
-import { Button } from "../../ui/button";
 import { authClient } from "../../../lib/auth-client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../ui/alert-dialog";
 
 import type { Role } from "../../../types";
-import { DashboardLayoutSkeleton } from "../../skeletons/dashboard-layout-skeleton";
 
-// Navigation items dengan role-based access
+// Navigation items without grouping
 const navigationItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: LayoutDashboardIcon,
+    icon: LayoutDashboard,
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
@@ -53,25 +70,19 @@ const navigationItems = [
   {
     title: "Users",
     url: "/dashboard/users",
-    icon: UsersIcon,
+    icon: Users,
     roles: ["SUPER_ADMIN", "ADMIN"] as Role[],
   },
   {
     title: "Posyandu",
     url: "/dashboard/posyandu",
-    icon: BuildingIcon,
-    roles: [
-      "SUPER_ADMIN",
-      "ADMIN",
-      "TENAGA_KESEHATAN",
-      "KADER_POSYANDU",
-      "ORANG_TUA",
-    ] as Role[],
+    icon: Building,
+    roles: ["SUPER_ADMIN", "TENAGA_KESEHATAN"] as Role[],
   },
   {
     title: "Anak",
     url: "/dashboard/anak",
-    icon: BabyIcon,
+    icon: Baby,
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
@@ -82,25 +93,24 @@ const navigationItems = [
   {
     title: "My Children",
     url: "/dashboard/my-children",
-    icon: BabyIcon,
+    icon: Baby,
     roles: ["ORANG_TUA"] as Role[],
   },
   {
     title: "Pengukuran",
     url: "/dashboard/pengukuran",
-    icon: RulerIcon,
+    icon: Ruler,
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
       "TENAGA_KESEHATAN",
       "KADER_POSYANDU",
-      "ORANG_TUA",
     ] as Role[],
   },
   {
     title: "Ibu Hamil",
     url: "/dashboard/ibu-hamil",
-    icon: HeartIcon,
+    icon: Heart,
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
@@ -111,7 +121,7 @@ const navigationItems = [
   {
     title: "Orang Tua",
     url: "/dashboard/ortu",
-    icon: UserIcon,
+    icon: User,
     roles: [
       "SUPER_ADMIN",
       "ADMIN",
@@ -119,120 +129,171 @@ const navigationItems = [
       "KADER_POSYANDU",
     ] as Role[],
   },
+  {
+    title: "Forum",
+    url: "/dashboard/forum",
+    icon: MessageSquare,
+    roles: ["SUPER_ADMIN", "TENAGA_KESEHATAN", "ORANG_TUA"] as Role[],
+  },
 ];
 
-export default function DashboardLayout() {
-  const { data: session, isPending } = authClient.useSession();
-  const location = useLocation();
+function DashboardLayoutContent() {
+  const { data: session } = authClient.useSession();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { state, setOpen, isMobile, setOpenMobile } = useSidebar();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
-      await authClient.signOut();
-      toast.success("Berhasil logout");
-      navigate("/login");
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            queryClient.clear();
+            toast.success("Berhasil logout");
+            navigate("/login");
+          },
+        },
+      });
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Gagal logout");
     }
   };
 
-  // Filter menu items based on user role
-  const filteredNavItems = useMemo(() => {
+  // Auto-close sidebar on mobile or when collapsed
+  const handleNavClick = () => {
+    if (isMobile) {
+      // On mobile, close the mobile sheet
+      setOpenMobile(false);
+    } else if (state === "collapsed") {
+      // On desktop collapsed mode, close the sidebar
+      setOpen(false);
+    }
+  };
+
+  // Filter items based on user role
+  const filteredItems = useMemo(() => {
     const userRole = (session?.user as any)?.role as Role;
     if (!userRole) return [];
+
     return navigationItems.filter((item) => item.roles.includes(userRole));
   }, [session?.user]);
 
-  // ... existing code ...
-
-  // Show loading state
-  if (isPending) {
-    return <DashboardLayoutSkeleton />;
-  }
-
-  // Redirect to login if no session
-  if (!session) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  const user = session.user as any;
+  const user = session?.user as any;
+  const isCollapsed = state === "collapsed";
 
   return (
-    <SidebarProvider>
-      <Sidebar variant="inset">
+    <>
+      <Sidebar variant="floating" collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center gap-2 px-4 py-2">
-            <BuildingIcon className="h-6 w-6" />
-            <div className="flex flex-col">
-              <span className="font-semibold">Posyandu</span>
-              <span className="text-xs text-muted-foreground">
-                Sistem Informasi
-              </span>
-            </div>
+          <div
+            className={`flex items-center gap-2 px-4 py-2 ${
+              isCollapsed ? "justify-center" : ""
+            }`}
+          >
+            <Building className="h-6 w-6 shrink-0" />
+            {!isCollapsed && (
+              <div className="flex flex-col overflow-hidden">
+                <span className="font-semibold truncate">
+                  Posyandu Banjarsari
+                </span>
+              </div>
+            )}
           </div>
         </SidebarHeader>
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Menu</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {filteredNavItems.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild>
-                      <Link to={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Account</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link to="/dashboard/profile">
-                      <UserCircleIcon className="h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {filteredItems.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.title}
+                        isActive={isActive}
+                      >
+                        <Link to={item.url} onClick={handleNavClick}>
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
 
         <SidebarFooter>
-          <div className="flex flex-col gap-2 p-2">
-            <div className="flex items-center gap-2 rounded-md bg-sidebar-accent px-3 py-2">
-              <UserCircleIcon className="h-5 w-5" />
-              <div className="flex flex-col flex-1 min-w-0">
-                <span className="text-sm font-medium truncate">
-                  {user?.displayUsername || user?.name || user?.username}
-                </span>
-                <span className="text-xs text-muted-foreground truncate">
-                  {user?.role || "User"}
-                </span>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="w-full justify-start"
-            >
-              <LogOutIcon className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  >
+                    <UserCircle className="h-5 w-5 shrink-0" />
+                    <div className="flex flex-col flex-1 min-w-0 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">
+                        {user?.displayUsername || user?.name || user?.username}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {user?.role?.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <ChevronUp className="ml-auto h-4 w-4" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                  side={isMobile ? "bottom" : "top"}
+                  align="end"
+                  sideOffset={4}
+                >
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <UserCircle className="h-8 w-8 shrink-0 rounded-full" />
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="truncate font-semibold">
+                          {user?.displayUsername ||
+                            user?.name ||
+                            user?.username}
+                        </span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {user?.email}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/profile" className="cursor-pointer">
+                      <UserCircle className="h-4 w-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setShowLogoutDialog(true);
+                    }}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
 
         <SidebarRail />
@@ -241,15 +302,42 @@ export default function DashboardLayout() {
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
           <SidebarTrigger className="-ml-1" />
-          <div className="flex items-center gap-2 flex-1">
-            <h1 className="text-lg font-semibold">Sistem Informasi Posyandu</h1>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <h1 className="text-lg font-semibold truncate">
+              Sistem Informasi Posyandu
+            </h1>
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col gap-4 p-4">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           <Outlet />
         </main>
       </SidebarInset>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin keluar dari aplikasi? Anda harus login
+              kembali untuk mengakses dashboard.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+export default function DashboardLayout() {
+  return (
+    <SidebarProvider>
+      <DashboardLayoutContent />
     </SidebarProvider>
   );
 }

@@ -163,6 +163,9 @@ export interface Pengukuran {
   zs_tb_u: number | null;
   status_bb_tb: string | null;
   zs_bb_tb: number | null;
+  lingkarKepala: number | null;
+  status_lk_u: string | null;
+  zs_lk_u: number | null;
   naikBeratBadan: string | null;
 }
 
@@ -172,6 +175,7 @@ export interface CreatePengukuranInput {
   berat: number;
   tinggi: number;
   lila?: number;
+  lingkarKepala?: number;
   caraUkur?: string;
   usiaSaatUkur?: string;
   status_bb_u?: string;
@@ -180,6 +184,8 @@ export interface CreatePengukuranInput {
   zs_tb_u?: number;
   status_bb_tb?: string;
   zs_bb_tb?: number;
+  status_lk_u?: string;
+  zs_lk_u?: number;
   naikBeratBadan?: string;
 }
 
@@ -188,6 +194,7 @@ export interface UpdatePengukuranInput {
   berat?: number;
   tinggi?: number;
   lila?: number;
+  lingkarKepala?: number;
   caraUkur?: string;
   usiaSaatUkur?: string;
   status_bb_u?: string;
@@ -196,6 +203,8 @@ export interface UpdatePengukuranInput {
   zs_tb_u?: number;
   status_bb_tb?: string;
   zs_bb_tb?: number;
+  status_lk_u?: string;
+  zs_lk_u?: number;
   naikBeratBadan?: string;
 }
 

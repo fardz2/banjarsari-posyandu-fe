@@ -63,9 +63,10 @@ export const queryKeys = {
   pengukuran: {
     all: ["pengukuran"] as const,
     lists: () => [...queryKeys.pengukuran.all, "list"] as const,
-    list: (anakId: string) => [...queryKeys.pengukuran.lists(), { anakId }] as const,
+    list: (filters: string) => [...queryKeys.pengukuran.lists(), { filters }] as const,
+    byAnak: (nik: string) => [...queryKeys.pengukuran.all, "byAnak", nik] as const,
     details: () => [...queryKeys.pengukuran.all, "detail"] as const,
-    detail: (id: string) => [...queryKeys.pengukuran.details(), id] as const,
+    detail: (id: number) => [...queryKeys.pengukuran.details(), id] as const,
   },
   
   // Ibu Hamil
@@ -114,4 +115,24 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.ortu.details(), id] as const,
     me: () => [...queryKeys.ortu.all, "me"] as const,
   },
+
+  // Dashboard
+  dashboard: {
+    all: ["dashboard"] as const,
+    summary: () => [...queryKeys.dashboard.all, "summary"] as const,
+    gender: () => [...queryKeys.dashboard.all, "gender"] as const,
+    nutrition: () => [...queryKeys.dashboard.all, "nutrition"] as const,
+    trends: () => [...queryKeys.dashboard.all, "trends"] as const,
+  },
+
+  // Forum
+  forum: {
+    all: ["forum"] as const,
+    lists: () => [...queryKeys.forum.all, "list"] as const,
+    list: (filters: string) => [...queryKeys.forum.lists(), { filters }] as const,
+    details: () => [...queryKeys.forum.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.forum.details(), id] as const,
+    comments: (forumId: string) => [...queryKeys.forum.detail(forumId), "comments"] as const,
+  },
 } as const;
+

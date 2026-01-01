@@ -32,6 +32,7 @@ const api: CustomAxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'x-api-key': import.meta.env.VITE_API_KEY || '', // Tambahkan API Key dari env
   },
 }) as CustomAxiosInstance;
 
@@ -72,6 +73,12 @@ api.interceptors.response.use(
           break;
         case 401:
           message = 'Sesi telah berakhir. Silakan login kembali.';
+          // Auto-logout: redirect to login page with callback URL
+          setTimeout(() => {
+            const currentPath = window.location.pathname + window.location.search;
+            const callbackUrl = encodeURIComponent(currentPath);
+            window.location.href = `/login?callback=${callbackUrl}`;
+          }, 1500); // Delay untuk memberi waktu user membaca toast
           break;
         case 403:
           message = 'Anda tidak memiliki izin untuk melakukan tindakan ini.';

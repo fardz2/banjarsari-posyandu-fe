@@ -23,6 +23,7 @@ import {
   useCreateUser,
   useUpdateUser,
 } from "../../../hooks/user/useUserMutations";
+import { useCurrentUser } from "../../../hooks";
 import { usePosyandu } from "../../../hooks/posyandu/usePosyandu";
 import type { User, Role } from "../../../types";
 
@@ -62,6 +63,9 @@ interface UserFormProps {
 
 export default function UserForm({ user, onSuccess }: UserFormProps) {
   const isEditing = !!user;
+  const { data: userData } = useCurrentUser();
+  const currentUser = userData?.data as any; // Simplified for now
+  const isKader = currentUser?.role === "KADER_POSYANDU";
 
   // Form definition
   const form = useForm<UserFormValues>({
@@ -182,28 +186,40 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
           <Controller
             control={form.control}
             name="role"
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel>Role</FieldLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldError errors={[fieldState.error]} />
-              </Field>
-            )}
+            render={({ field, fieldState }) => {
+              // useCurrentUser hook logic inside component?
+              // Better to use context or pass props. But since we are inside the component...
+              // We need to fetch current user to know role if not passed.
+              // We can't use hook inside render callback.
+              // Let's rely on props or assume the component above handles it?
+              // Actually I should add useCurrentUser at top of this component.
+              // But replacement is focused on this block.
+              // Let's modify the whole component start to include useCurrentUser and logic.
+              // Wait, I can only replace this block? No, I need `isKader` variable.
+              // I will cancel this and do a larger replacement or insert usage at top.
+              return (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Role</FieldLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isEditing || isKader} // Disable if editing or if Kader (forced to ORANG_TUA)
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              );
+            }}
           />
 
           {needsPosyandu && (

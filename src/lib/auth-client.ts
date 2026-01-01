@@ -5,5 +5,10 @@ export const authClient = createAuthClient({
     baseURL: import.meta.env.VITE_BASE_URL,
     plugins: [ 
         usernameClient() 
-    ] 
+    ],
+    fetchOptions: {
+        headers: {
+            "x-api-key": import.meta.env.VITE_API_KEY || ""
+        }
+    }
 })

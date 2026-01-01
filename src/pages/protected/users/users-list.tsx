@@ -1,21 +1,15 @@
-"use client";
-
 import * as React from "react";
-import { PlusIcon, EditIcon, TrashIcon, ShieldIcon } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { PlusIcon, FilterIcon, X } from "lucide-react";
 import { useUsers, useDeleteUser, useAssignRole } from "../../../hooks";
+import { usePosyandu } from "../../../hooks/posyandu/usePosyandu";
 import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 import { DataTable } from "../../../components/ui/data-table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../../components/ui/alert-dialog";
+  ConfirmDialog,
+  FormDialog,
+  UserFilterDialog,
+} from "../../../components/dialogs";
 import {
   Dialog,
   DialogContent,
@@ -23,11 +17,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../../../components/ui/dialog";
 import type { User, Role } from "../../../types";
+import type { UserFilterFormValues } from "../../../utils/validations/user-filter.validation";
 import ListPageLayout from "../../../components/layout/list-page-layout";
 import UserForm from "./user-form";
+import { Can } from "../../../components/auth";
+import { useCurrentUser } from "../../../hooks";
+import { createUsersColumns } from "../../../components/columns";
 
 const ROLES: Role[] = [
   "SUPER_ADMIN",
@@ -42,19 +39,31 @@ export default function UsersListPage() {
   const [assignRoleUser, setAssignRoleUser] = React.useState<User | null>(null);
   const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [filters, setFilters] = React.useState<UserFilterFormValues>({});
   const [editingUser, setEditingUser] = React.useState<User | undefined>(
     undefined
   );
 
-  const { data, isLoading } = useUsers({ limit: 100 });
+  const { data: userData } = useCurrentUser();
+  const user = userData?.data as any; // Using any for easier access, but ideally typed
+  const userRole = user?.role as Role | undefined;
+
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const isAdmin = userRole === "ADMIN";
+  const isKader = userRole === "KADER_POSYANDU";
+
+  // Permissions
+  const canManageUsers = isSuperAdmin || isAdmin;
+  const canAssignRole = isSuperAdmin;
+  const canCreateUser = isSuperAdmin || isAdmin || isKader; // Kader can create but limited to ORANG_TUA
+
+  const { data, isLoading } = useUsers({ limit: 100, ...filters });
+  const { data: posyanduData } = usePosyandu(undefined, {
+    enabled: isSuperAdmin,
+  });
   const deleteMutation = useDeleteUser();
   const assignRoleMutation = useAssignRole();
-
-  const handleDelete = async () => {
-    if (!deleteUserId) return;
-    await deleteMutation.mutateAsync(deleteUserId);
-    setDeleteUserId(null);
-  };
 
   const handleAssignRole = async () => {
     if (!assignRoleUser || !selectedRole) return;
@@ -66,218 +75,196 @@ export default function UsersListPage() {
     setSelectedRole(null);
   };
 
-  const getRoleBadgeColor = (role: Role) => {
-    const colors: Record<Role, string> = {
-      SUPER_ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      TENAGA_KESEHATAN:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      KADER_POSYANDU:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      ORANG_TUA:
-        "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-    };
-    return colors[role] || "bg-gray-100 text-gray-800";
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsFormOpen(true);
   };
 
-  const columns: ColumnDef<User>[] = [
-    {
-      accessorKey: "name",
-      header: "Nama",
-      cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("name")}</div>
-      ),
-    },
-    {
-      accessorKey: "username",
-      header: "Username",
-      cell: ({ row }) => <div>{row.getValue("username") || "-"}</div>,
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }) => <div>{row.getValue("email")}</div>,
-    },
-    {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => {
-        const role = row.getValue("role") as Role;
-        return (
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeColor(
-              role
-            )}`}
-          >
-            {role}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "posyandu.nama",
-      header: "Posyandu",
-      cell: ({ row }) => <div>{row.original.posyandu?.nama || "-"}</div>,
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const user = row.original;
-        return (
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setEditingUser(user);
-                setIsFormOpen(true);
-              }}
-            >
-              <EditIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setAssignRoleUser(user);
-                setSelectedRole(user.role);
-              }}
-            >
-              <ShieldIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDeleteUserId(user.id)}
-            >
-              <TrashIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
+  const handleOpenAssignRole = (user: User) => {
+    setAssignRoleUser(user);
+    setSelectedRole(user.role);
+  };
+
+  const handleApplyFilters = (newFilters: UserFilterFormValues) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+  };
+
+  const hasActiveFilters = filters.role || filters.posyanduId;
+
+  const getFilterBadgeText = () => {
+    const badges: string[] = [];
+    if (filters.role) badges.push(filters.role);
+    if (filters.posyanduId) {
+      const posyandu = posyanduData?.data?.find(
+        (p) => String(p.id) === filters.posyanduId
+      );
+      if (posyandu) badges.push(posyandu.nama);
+    }
+    return badges.join(", ");
+  };
+
+  const columns = React.useMemo(
+    () =>
+      createUsersColumns({
+        onEdit: canManageUsers ? handleEdit : undefined,
+        onDelete: canManageUsers ? setDeleteUserId : undefined,
+        onAssignRole: canAssignRole ? handleOpenAssignRole : undefined,
+      }),
+    [canManageUsers, canAssignRole]
+  );
 
   return (
-    <ListPageLayout
-      title="Users"
-      description="Manage user accounts and permissions"
-      headerAction={
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingUser(undefined)}>
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add User
+    <Can
+      allowedRoles={[
+        "SUPER_ADMIN",
+        "ADMIN",
+        "KADER_POSYANDU",
+        "TENAGA_KESEHATAN",
+      ]}
+    >
+      <ListPageLayout
+        title="Users"
+        description="Manage user accounts and permissions"
+        headerAction={
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="gap-1 pr-1">
+                <span className="text-xs">{getFilterBadgeText()}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 hover:bg-transparent"
+                  onClick={handleClearFilters}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+            <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
+              <FilterIcon className="h-4 w-4 mr-2" />
+              Filter
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+            {canCreateUser && (
+              <Button
+                onClick={() => {
+                  setEditingUser(undefined);
+                  setIsFormOpen(true);
+                }}
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            )}
+            <FormDialog
+              open={isFormOpen}
+              onOpenChange={setIsFormOpen}
+              title={editingUser ? "Edit User" : "Add New User"}
+              maxWidth="lg"
+              hideFooter
+            >
+              <UserForm
+                user={editingUser}
+                onSuccess={() => setIsFormOpen(false)}
+              />
+            </FormDialog>
+          </div>
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={data?.data || []}
+          searchKey="name"
+          isLoading={isLoading}
+          searchPlaceholder="Cari user..."
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteUserId !== null}
+          onOpenChange={(open) => !open && setDeleteUserId(null)}
+          title="Are you sure?"
+          description="This action cannot be undone. This will permanently delete the user account."
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="destructive"
+          onConfirm={() => deleteMutation.mutate(deleteUserId!)}
+          loading={deleteMutation.isPending}
+        />
+
+        {/* Assign Role Dialog */}
+        <Dialog
+          open={!!assignRoleUser}
+          onOpenChange={(open) => {
+            if (!open) {
+              setAssignRoleUser(null);
+              setSelectedRole(null);
+            }
+          }}
+        >
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {editingUser ? "Edit User" : "Add New User"}
-              </DialogTitle>
+              <DialogTitle>Assign Role</DialogTitle>
+              <DialogDescription>
+                Change the role for {assignRoleUser?.name}
+              </DialogDescription>
             </DialogHeader>
-            <UserForm
-              user={editingUser}
-              onSuccess={() => setIsFormOpen(false)}
-            />
+            <div className="flex flex-col gap-2">
+              {ROLES.map((role) => (
+                <button
+                  key={role}
+                  onClick={() => setSelectedRole(role)}
+                  className={`flex items-center gap-2 rounded-md border p-3 text-left transition-colors hover:bg-accent ${
+                    selectedRole === role ? "border-primary bg-accent" : ""
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-4 rounded-full border-2 ${
+                      selectedRole === role
+                        ? "border-primary bg-primary"
+                        : "border-muted-foreground"
+                    }`}
+                  />
+                  <span className="font-medium">{role}</span>
+                </button>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAssignRoleUser(null);
+                  setSelectedRole(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAssignRole}
+                disabled={
+                  !selectedRole ||
+                  selectedRole === assignRoleUser?.role ||
+                  assignRoleMutation.isPending
+                }
+              >
+                {assignRoleMutation.isPending ? "Assigning..." : "Assign Role"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
-      }
-    >
-      <DataTable
-        columns={columns}
-        data={data?.data || []}
-        searchKey="name"
-        isLoading={isLoading}
-        searchPlaceholder="Cari user..."
-      />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!deleteUserId}
-        onOpenChange={(open) => !open && setDeleteUserId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              user account.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Assign Role Dialog */}
-      <Dialog
-        open={!!assignRoleUser}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAssignRoleUser(null);
-            setSelectedRole(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Role</DialogTitle>
-            <DialogDescription>
-              Change the role for {assignRoleUser?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {ROLES.map((role) => (
-              <button
-                key={role}
-                onClick={() => setSelectedRole(role)}
-                className={`flex items-center gap-2 rounded-md border p-3 text-left transition-colors hover:bg-accent ${
-                  selectedRole === role ? "border-primary bg-accent" : ""
-                }`}
-              >
-                <div
-                  className={`h-4 w-4 rounded-full border-2 ${
-                    selectedRole === role
-                      ? "border-primary bg-primary"
-                      : "border-muted-foreground"
-                  }`}
-                />
-                <span className="font-medium">{role}</span>
-              </button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAssignRoleUser(null);
-                setSelectedRole(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssignRole}
-              disabled={
-                !selectedRole ||
-                selectedRole === assignRoleUser?.role ||
-                assignRoleMutation.isPending
-              }
-            >
-              {assignRoleMutation.isPending ? "Assigning..." : "Assign Role"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </ListPageLayout>
+        {/* User Filter Dialog */}
+        <UserFilterDialog
+          open={isFilterOpen}
+          onOpenChange={setIsFilterOpen}
+          onApplyFilters={handleApplyFilters}
+          posyandu={isSuperAdmin ? posyanduData?.data || [] : []}
+          currentFilters={filters}
+        />
+      </ListPageLayout>
+    </Can>
   );
 }

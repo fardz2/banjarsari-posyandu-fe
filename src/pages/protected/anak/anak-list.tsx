@@ -1,180 +1,185 @@
 "use client";
 
 import * as React from "react";
-import { Link } from "react-router";
-import { PlusIcon, EditIcon, TrashIcon, EyeIcon } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useAnak } from "../../../hooks/anak/useAnak";
+import { PlusIcon, Download } from "lucide-react";
+import { useAnak, useMyChildren } from "../../../hooks/anak/useAnak";
 import { useDeleteAnak } from "../../../hooks/anak/useAnakMutations";
+import { usePosyandu } from "../../../hooks/posyandu/usePosyandu";
 import { Button } from "../../../components/ui/button";
 import { DataTable } from "../../../components/ui/data-table";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../../components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../../components/ui/alert-dialog";
-import type { Anak } from "../../../types";
+import { ConfirmDialog, FormDialog } from "../../../components/dialogs";
+import { ExportDialog } from "../../../components/dialogs/export-dialog";
 import AnakForm from "./anak-form";
 import ListPageLayout from "../../../components/layout/list-page-layout";
+import { createAnakColumns } from "../../../components/columns";
+import { Can } from "../../../components/auth";
+import { AnakCard } from "../../../components/cards/anak-card";
+
+import { authClient } from "../../../lib/auth-client";
 
 export default function AnakListPage() {
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
+  const user = session?.user as any;
+  const isOrtu = user?.role === "ORANG_TUA";
+
   const [deleteNik, setDeleteNik] = React.useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
   const [editingNik, setEditingNik] = React.useState<string | null>(null);
 
-  const { data: anakData, isLoading } = useAnak({ limit: 100 });
+  // Toggle hooks based on role
+  // Wait for session to load before fetching to avoid 403 for ORANG_TUA
+  // (Initially isOrtu is false, which would trigger allAnak query if we don't wait)
+  const shouldFetchAll = !isSessionLoading && !!session && !isOrtu;
+  const shouldFetchMy = !isSessionLoading && !!session && isOrtu;
+
+  const { data: allAnakData, isLoading: isLoadingAll } = useAnak(
+    { limit: 100 },
+    { enabled: shouldFetchAll }
+  );
+  const { data: myAnakData, isLoading: isLoadingMy } = useMyChildren({
+    enabled: shouldFetchMy,
+  });
+
+  const anakData = isOrtu ? myAnakData : allAnakData;
+  const isLoading = isOrtu ? isLoadingMy : isLoadingAll;
+  const { data: posyanduData } = usePosyandu({ limit: 100 });
   const deleteMutation = useDeleteAnak();
 
-  const handleDelete = async () => {
-    if (!deleteNik) return;
-    try {
-      await deleteMutation.mutateAsync(deleteNik);
-      setDeleteNik(null);
-    } catch (error) {
-      console.error(error);
-    }
+  // Permissions
+  const userRole = user?.role;
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const isAdmin = userRole === "ADMIN";
+  const isKader = userRole === "KADER_POSYANDU";
+
+  // Kader can create/edit but not delete
+  const canEdit = isSuperAdmin || isAdmin || isKader;
+  const canDelete = isSuperAdmin || isAdmin;
+
+  const handleEdit = (nik: string) => {
+    setEditingNik(nik);
+    setIsDialogOpen(true);
   };
 
-  const columns: ColumnDef<Anak>[] = [
-    {
-      accessorKey: "nik",
-      header: "NIK",
-      cell: ({ row }) => (
-        <div className="font-mono text-xs">{row.getValue("nik")}</div>
-      ),
-    },
-    {
-      accessorKey: "nama",
-      header: "Nama",
-      cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("nama")}</div>
-      ),
-    },
-    {
-      accessorKey: "jenisKelamin",
-      header: "L/P",
-      cell: ({ row }) => (
-        <div>{row.getValue("jenisKelamin") === "Laki-laki" ? "L" : "P"}</div>
-      ),
-    },
-    {
-      accessorKey: "tglLahir",
-      header: "Tgl Lahir",
-      cell: ({ row }) => {
-        const date = new Date(row.getValue("tglLahir"));
-        return <div>{date.toLocaleDateString("id-ID")}</div>;
-      },
-    },
-    {
-      accessorKey: "posyandu.nama",
-      header: "Posyandu",
-      cell: ({ row }) => <div>{row.original.posyandu?.nama || "-"}</div>,
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const anak = row.original;
-        return (
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to={`/dashboard/anak/${anak.nik}`}>
-                <EyeIcon className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setEditingNik(anak.nik);
-                setIsDialogOpen(true);
-              }}
-            >
-              <EditIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDeleteNik(anak.nik)}
-            >
-              <TrashIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
+  const columns = React.useMemo(
+    () =>
+      createAnakColumns({
+        onEdit: canEdit ? handleEdit : undefined,
+        onDelete: canDelete ? setDeleteNik : undefined,
+        hideManagement: isOrtu,
+      }),
+    [isOrtu, canEdit, canDelete]
+  );
 
   return (
-    <ListPageLayout
-      title="Data Anak"
-      description="Kelola data anak dan balita di posyandu"
-      headerAction={
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingNik(null)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Tambah Anak
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingNik ? "Edit Data Anak" : "Tambah Anak Baru"}
-              </DialogTitle>
-            </DialogHeader>
-            <AnakForm
-              nik={editingNik || undefined}
-              onSuccess={() => setIsDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      }
+    <Can
+      allowedRoles={[
+        "SUPER_ADMIN",
+        "ADMIN",
+        "TENAGA_KESEHATAN",
+        "KADER_POSYANDU",
+        "ORANG_TUA",
+      ]}
     >
-      <DataTable
-        columns={columns}
-        data={anakData?.data || []}
-        searchKey="nama"
-        isLoading={isLoading}
-        searchPlaceholder="Cari nama anak..."
-      />
-
-      <AlertDialog
-        open={!!deleteNik}
-        onOpenChange={(open) => !open && setDeleteNik(null)}
+      <ListPageLayout
+        title="Data Anak"
+        description="Kelola data anak dan balita di posyandu"
+        headerAction={
+          !isOrtu ? (
+            <div className="flex gap-2 justify-end">
+              <Can allowedRoles={["SUPER_ADMIN", "ADMIN"]} hideOnly>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsExportDialogOpen(true)}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </Can>
+              <Can
+                allowedRoles={["SUPER_ADMIN", "ADMIN", "KADER_POSYANDU"]}
+                hideOnly
+              >
+                <Button
+                  onClick={() => {
+                    setEditingNik(null);
+                    setIsDialogOpen(true);
+                  }}
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Tambah Anak
+                </Button>
+              </Can>
+              <FormDialog
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                title={editingNik ? "Edit Data Anak" : "Tambah Anak Baru"}
+                maxWidth="md"
+                hideFooter
+              >
+                <AnakForm
+                  nik={editingNik || undefined}
+                  onSuccess={() => setIsDialogOpen(false)}
+                />
+              </FormDialog>
+            </div>
+          ) : null
+        }
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Data Anak?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Data anak dan riwayat
-              pengukurannya akan dihapus permanen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </ListPageLayout>
+        {isOrtu ? (
+          /* ORANG_TUA View: Grid of Cards */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              // Simple loading skeleton for cards
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-48 rounded-xl bg-muted animate-pulse"
+                />
+              ))
+            ) : anakData?.data?.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-muted">
+                <p>Belum ada data anak yang terhubung dengan akun Anda.</p>
+              </div>
+            ) : (
+              anakData?.data?.map((anak) => (
+                <AnakCard key={anak.nik} anak={anak} />
+              ))
+            )}
+          </div>
+        ) : (
+          /* ADMIN/STAFF View: Data Table */
+          <DataTable
+            columns={columns}
+            data={anakData?.data || []}
+            searchKey="nama"
+            isLoading={isLoading}
+            searchPlaceholder="Cari nama anak..."
+          />
+        )}
+
+        <ConfirmDialog
+          open={deleteNik !== null}
+          onOpenChange={(open) => !open && setDeleteNik(null)}
+          title="Hapus Data Anak?"
+          description="Tindakan ini tidak dapat dibatalkan. Data anak dan riwayat pengukurannya akan dihapus permanen."
+          confirmText="Hapus"
+          cancelText="Batal"
+          variant="destructive"
+          onConfirm={() => deleteMutation.mutate(deleteNik!)}
+          loading={deleteMutation.isPending}
+        />
+
+        {/* Export Dialog */}
+        <ExportDialog
+          open={isExportDialogOpen}
+          onOpenChange={setIsExportDialogOpen}
+          type="anak"
+          posyandu={posyanduData?.data || []}
+        />
+      </ListPageLayout>
+    </Can>
   );
 }

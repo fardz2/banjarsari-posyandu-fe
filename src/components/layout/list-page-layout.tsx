@@ -29,7 +29,7 @@ export default function ListPageLayout({
       </div>
 
       <Card>
-        <CardContent className="p-6">{children}</CardContent>
+        <CardContent>{children}</CardContent>
       </Card>
     </div>
   );

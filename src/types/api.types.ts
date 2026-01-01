@@ -52,6 +52,14 @@ export interface PaginationParams {
 }
 
 /**
+ * User Filter Parameters
+ */
+export interface UserFilterParams {
+  role?: string;
+  posyanduId?: string;
+}
+
+/**
  * Generic List Response (without pagination)
  */
 export interface ListResponse<T> {

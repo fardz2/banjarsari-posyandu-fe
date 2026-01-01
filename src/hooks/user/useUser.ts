@@ -10,7 +10,7 @@ import {
   getAllUsers, 
   getUserById 
 } from "../../services";
-import type { PaginationParams } from "../../types";
+import type { PaginationParams, UserFilterParams } from "../../types";
 
 /**
  * Hook untuk get current user profile
@@ -27,7 +27,7 @@ export const useCurrentUser = () => {
  * Hook untuk get all users (admin only)
  * GET /api/v1/users
  */
-export const useUsers = (params?: PaginationParams) => {
+export const useUsers = (params?: PaginationParams & UserFilterParams) => {
   return useQuery({
     queryKey: queryKeys.user.list(JSON.stringify(params || {})),
     queryFn: () => getAllUsers(params),

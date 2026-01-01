@@ -76,16 +76,31 @@ posyandu-fe/
 │   │   │   ├── hero.tsx
 │   │   │   ├── registration-flow.tsx
 │   │   │   └── service.tsx
+│   │   ├── dialogs/         # Reusable dialog components
+│   │   │   ├── confirm-dialog.tsx  # Confirmation dialog wrapper
+│   │   │   ├── export-dialog.tsx   # Export data dialog
+│   │   │   ├── form-dialog.tsx     # Form dialog wrapper
+│   │   │   ├── user-filter-dialog.tsx # User filter dialog
+│   │   │   └── index.ts            # Barrel export
 │   │   ├── layout/          # Layout components
+│   │   │   ├── list-page-layout.tsx
 │   │   │   └── protected/
-│   │   │       └── protected-layout.tsx
-│   │   └── ui/              # Reusable UI components (shadcn/ui style)
+│   │   │       ├── protected-layout.tsx
+│   │   │       └── dashboard-layout.tsx
+│   │   ├── skeletons/       # Loading skeletons
+│   │   │   ├── dashboard-layout-skeleton.tsx
+│   │   │   ├── dashboard-skeleton.tsx
+│   │   │   ├── detail-skeleton.tsx
+│   │   │   ├── form-skeleton.tsx
+│   │   │   ├── profile-skeleton.tsx
+│   │   │   └── table-skeleton.tsx
+│   │   └── ui/              # Reusable UI primitives (shadcn/ui style)
 │   │       ├── accordion.tsx
-│   │       ├── alert-dialog.tsx  # Alert dialog for confirmations
+│   │       ├── alert-dialog.tsx  # Base alert dialog primitive
 │   │       ├── button.tsx
 │   │       ├── card.tsx
 │   │       ├── checkbox.tsx      # Checkbox component (Radix UI)
-│   │       ├── dialog.tsx        # Dialog for modals
+│   │       ├── dialog.tsx        # Base dialog primitive
 │   │       ├── empty.tsx
 │   │       ├── field.tsx
 │   │       ├── input.tsx
@@ -113,6 +128,10 @@ posyandu-fe/
 │   │   ├── posyandu/        # Posyandu hooks
 │   │   │   ├── index.ts
 │   │   │   └── usePosyandu.ts
+│   │   ├── user/            # User hooks
+│   │   │   └── index.ts
+│   │   ├── ortu/            # Ortu hooks
+│   │   │   └── index.ts
 │   │   └── index.ts         # Main barrel export
 │   ├── lib/                 # Utility libraries dan configurations
 │   │   ├── auth-client.ts   # Better-auth client configuration
@@ -125,6 +144,7 @@ posyandu-fe/
 │   │   ├── protected/       # Protected pages (requires auth)
 │   │   │   └── dashboard/
 │   │   │       └── dashboard.tsx
+│   │   │   └── dashboard-layout.tsx
 │   │   ├── public/          # Public pages
 │   │   │   └── landing.tsx
 │   │   └── not-found.tsx    # 404 page
@@ -133,16 +153,24 @@ posyandu-fe/
 │   ├── services/            # API service layer
 │   │   ├── anak.service.ts  # Anak & Pengukuran API calls
 │   │   ├── ibu-hamil.service.ts
+│   │   ├── ortu.service.ts
 │   │   ├── posyandu.service.ts
+│   │   ├── user.service.ts
 │   │   └── index.ts         # Barrel export
 │   ├── types/               # TypeScript type definitions
 │   │   ├── api.types.ts     # Generic API response types
 │   │   ├── auth.types.ts    # Auth-related types
-│   │   ├── posyandu.types.ts # Domain types (Anak, IbuHamil, etc.)
+│   │   ├── better-auth.d.ts # Better Auth types
+│   │   ├── posyandu.types.ts # Domain types (Anak, IbuHamil, User, Ortu, etc.)
 │   │   └── index.ts         # Barrel export
 │   ├── utils/               # Utility functions and schemas
 │   │   └── validations/     # Zod validation schemas
 │   │       ├── auth.validation.ts
+│   │       ├── profile.validation.ts
+│   │       ├── posyandu.validation.ts
+│   │       ├── user-filter.validation.ts
+│   │       ├── anak.validation.ts
+│   │       ├── pengukuran.validation.ts
 │   │       └── index.ts     # Barrel export
 │   ├── index.css            # Global styles dan Tailwind config
 │   └── main.tsx             # Application entry point
@@ -267,6 +295,48 @@ export const authClient = createAuthClient({
     // Tambahkan rute protected lainnya di sini
   ],
 }
+```
+
+### Security Configuration
+
+#### API Key Protection (Double Protection)
+
+Untuk keamanan tambahan, backend mewajibkan header `x-api-key` di setiap request. Konfigurasi ini diterapkan di:
+
+1.  **Axios (`src/lib/axios.ts`)**: Header `x-api-key` ditambahkan otomatis ke semua request API.
+2.  **Better Auth (`src/lib/auth-client.ts`)**: Header `x-api-key` ditambahkan via `fetchOptions` untuk request autentikasi.
+
+**Environment Variable**:
+Pastikan `VITE_API_KEY` diset di `.env`:
+
+```env
+VITE_API_KEY=your-secure-api-key
+```
+
+### RBAC Components
+
+#### `<Can />` Component
+
+Untuk mengontrol visibilitas elemen UI berdasarkan role user.
+
+**Props**:
+
+- `allowedRoles`: Array role yang diizinkan (e.g. `["ADMIN", "KADER_POSYANDU"]`)
+- `redirectTo`: (Optional) URL redirect jika tidak punya akses (default: `/dashboard`)
+- `hideOnly`: (Optional) Boolean. Jika `true`, komponen hanya disembunyikan tanpa redirect.
+
+**Usage**:
+
+```tsx
+// Redirect jika tidak punya akses
+<Can allowedRoles={["SUPER_ADMIN"]}>
+  <AdminPage />
+</Can>
+
+// Sembunyikan tombol (tanpa redirect)
+<Can allowedRoles={["ADMIN"]} hideOnly>
+  <Button>Add</Button>
+</Can>
 ```
 
 ---
@@ -590,6 +660,11 @@ export interface PaginationParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+
+export interface UserFilterParams {
+  role?: string;
+  posyanduId?: string;
+}
 ```
 
 ### Domain Types
@@ -625,6 +700,153 @@ import type { Anak, ApiResponse, PaginationParams } from "../../types";
 // From a page component (src/pages/dashboard/anak.tsx)
 import type { Anak, IbuHamil } from "../../types";
 ```
+
+---
+
+## 👤 Profile Management Feature
+
+**Location**: `src/pages/protected/profile/profile.tsx`
+
+### Overview
+
+Complete profile management page using **Better Auth** for authentication and profile updates. Allows users to update their personal information and change password securely.
+
+### Features
+
+#### 1. Profile Information Update
+
+- Update name (required)
+- Update username (optional, 3-30 characters)
+- Form validation with Zod schema
+- Uses Better Auth's `updateUser()` method
+
+#### 2. Account Details Display
+
+Read-only display of:
+
+- Email address
+- User role (formatted)
+- Posyandu assignment (if applicable)
+- Member since date (Indonesian format)
+
+#### 3. Change Password
+
+- Current password verification
+- New password (minimum 6 characters)
+- Password confirmation with validation
+- Uses Better Auth's `changePassword()` method
+
+### Better Auth Integration
+
+```typescript
+// Get current user session
+const { data: session, isPending } = authClient.useSession();
+
+// Update user profile
+await authClient.updateUser({
+  name: values.name,
+  username: values.username,
+});
+
+// Change password
+await authClient.changePassword({
+  currentPassword: values.currentPassword,
+  newPassword: values.newPassword,
+  revokeOtherSessions: false,
+});
+```
+
+### Validation Schemas
+
+**File**: `src/utils/validations/profile.validation.ts`
+
+```typescript
+// Profile update schema
+export const profileSchema = z.object({
+  name: z.string().min(1, "Nama wajib diisi"),
+  username: z
+    .string()
+    .min(3, "Username minimal 3 karakter")
+    .max(30, "Username maksimal 30 karakter")
+    .optional(),
+});
+
+// Change password schema
+export const profileChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Password saat ini wajib diisi"),
+    newPassword: z.string().min(6, "Password baru minimal 6 karakter"),
+    confirmPassword: z.string().min(1, "Konfirmasi password wajib diisi"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Password tidak cocok",
+    path: ["confirmPassword"],
+  });
+
+// Type inference
+export type ProfileFormValues = z.infer<typeof profileSchema>;
+export type ProfileChangePasswordFormValues = z.infer<
+  typeof profileChangePasswordSchema
+>;
+```
+
+### Loading Skeleton
+
+**File**: `src/components/skeletons/profile-skeleton.tsx`
+
+Dedicated skeleton component matching profile page layout:
+
+- Header skeleton
+- Profile information card skeleton
+- Account details card skeleton
+- Change password card skeleton
+
+### Usage Example
+
+```typescript
+import {
+  profileSchema,
+  profileChangePasswordSchema,
+} from "../../../utils/validations";
+import { ProfileSkeleton } from "../../../components/skeletons/profile-skeleton";
+import { authClient } from "../../../lib/auth-client";
+
+export default function ProfilePage() {
+  const { data: session, isPending } = authClient.useSession();
+
+  if (isPending) {
+    return <ProfileSkeleton />;
+  }
+
+  // Render profile forms...
+}
+```
+
+### Route Configuration
+
+```typescript
+// router.tsx
+{
+  path: "/dashboard/profile",
+  element: <ProfilePage />,
+}
+```
+
+### Navigation
+
+Profile link available in sidebar navigation for all authenticated users:
+
+- Icon: `UserCircle` from lucide-react
+- Path: `/dashboard/profile`
+- Label: "Profile"
+
+### Benefits of Better Auth Approach
+
+1. **Simplified Architecture**: No custom API endpoints needed
+2. **Automatic Session Sync**: Session updates automatically after changes
+3. **Built-in Security**: Better Auth handles password hashing and validation
+4. **Consistent Auth Flow**: All auth operations use same library
+5. **Type Safety**: TypeScript types provided out of the box
 
 ---
 
@@ -914,6 +1136,190 @@ Komponen spesifik untuk fitur tertentu:
 - `service.tsx` - Service information
 - `registration-flow.tsx` - Registration flow visualization
 - `footer.tsx` - Footer component
+
+### Dialog Components
+
+**Location**: `src/components/dialogs/`
+
+Reusable dialog wrappers yang menyederhanakan implementasi dialog di seluruh aplikasi.
+
+#### ConfirmDialog
+
+Wrapper untuk confirmation dialogs (delete, destructive actions, etc.).
+
+**Props**:
+
+```typescript
+interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmText?: string; // Default: "Confirm"
+  cancelText?: string; // Default: "Cancel"
+  onConfirm: () => void | Promise<void>;
+  variant?: "default" | "destructive"; // Default: "default"
+  loading?: boolean; // External loading state (optional)
+}
+```
+
+**Usage Example**:
+
+```typescript
+import { ConfirmDialog } from "../../components/dialogs";
+
+function MyListPage() {
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const deleteMutation = useDeleteItem();
+
+  return (
+    <>
+      {/* Your list content */}
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Hapus Data?"
+        description="Tindakan ini tidak dapat dibatalkan. Data akan dihapus permanen."
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={() => deleteMutation.mutate(deleteId!)}
+        loading={deleteMutation.isPending}
+      />
+    </>
+  );
+}
+```
+
+**Features**:
+
+- ✅ Automatic loading state management (internal or external)
+- ✅ Disabled buttons during async operations
+- ✅ Error handling via parent component
+- ✅ Automatic dialog close on success
+- ✅ Destructive variant with red styling
+
+#### FormDialog
+
+Wrapper untuk form dialogs (create, edit, etc.).
+
+**Props**:
+
+```typescript
+interface FormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  submitText?: string; // Default: "Submit"
+  cancelText?: string; // Default: "Cancel"
+  onSubmit?: () => void | Promise<void>; // Optional, form can handle its own submission
+  loading?: boolean; // External loading state (optional)
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl"; // Default: "sm"
+  hideFooter?: boolean; // Default: false
+}
+```
+
+**Usage Example**:
+
+```typescript
+import { FormDialog } from "../../components/dialogs";
+
+function MyListPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  return (
+    <>
+      <Button
+        onClick={() => {
+          setEditingId(null);
+          setIsDialogOpen(true);
+        }}
+      >
+        <PlusIcon className="mr-2 h-4 w-4" />
+        Tambah Item
+      </Button>
+
+      <FormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title={editingId ? "Edit Item" : "Tambah Item Baru"}
+        maxWidth="md"
+        hideFooter // Form handles its own submission
+      >
+        <ItemForm
+          id={editingId || undefined}
+          onSuccess={() => setIsDialogOpen(false)}
+        />
+      </FormDialog>
+    </>
+  );
+}
+```
+
+**Features**:
+
+- ✅ Flexible footer (can be hidden if form handles submission)
+- ✅ Multiple width options (sm, md, lg, xl, 2xl)
+- ✅ Optional description
+- ✅ Automatic loading state management
+- ✅ Optional `onSubmit` handler (if not using form's own handler)
+
+**Best Practices**:
+
+1. Use `hideFooter={true}` when form component handles its own submission
+2. Pass `onSuccess` callback to form to close dialog after successful submission
+3. Use `maxWidth` to control dialog size based on form complexity
+4. For delete confirmations, always use `ConfirmDialog` with `variant="destructive"`
+5. Keep dialog trigger buttons outside of dialog component (not using `DialogTrigger`)
+
+**Migration from Raw Dialogs**:
+
+```typescript
+// ❌ Before - Raw AlertDialog (verbose)
+<AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Hapus Data?</AlertDialogTitle>
+      <AlertDialogDescription>
+        Tindakan ini tidak dapat dibatalkan...
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Batal</AlertDialogCancel>
+      <AlertDialogAction onClick={handleDelete} disabled={deleteMutation.isPending}>
+        {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+
+// ✅ After - ConfirmDialog (concise)
+<ConfirmDialog
+  open={deleteId !== null}
+  onOpenChange={(open) => !open && setDeleteId(null)}
+  title="Hapus Data?"
+  description="Tindakan ini tidak dapat dibatalkan..."
+  confirmText="Hapus"
+  cancelText="Batal"
+  variant="destructive"
+  onConfirm={() => deleteMutation.mutate(deleteId!)}
+  loading={deleteMutation.isPending}
+/>
+```
+
+**Current Usage**:
+All list pages (`*-list.tsx`) in the application use these dialog components:
+
+- ✅ `posyandu-list.tsx` - ConfirmDialog, FormDialog
+- ✅ `anak-list.tsx` - ConfirmDialog, FormDialog
+- ✅ `ibu-hamil-list.tsx` - ConfirmDialog, FormDialog
+- ✅ `ortu-list.tsx` - ConfirmDialog, FormDialog
+- ✅ `pengukuran-list.tsx` - ConfirmDialog
+- ✅ `users-list.tsx` - ConfirmDialog, FormDialog
 
 ### Layout Components
 
@@ -1282,6 +1688,102 @@ export default function ProtectedLayout() {
 
 ---
 
+---
+
+## 🔐 Role-Based Access Control (RBAC)
+
+### Overview
+
+The application implements comprehensive role-based access control to ensure users only access features and data appropriate to their role.
+
+### Roles
+
+| Role               | Description            | Access Level                                             |
+| ------------------ | ---------------------- | -------------------------------------------------------- |
+| `SUPER_ADMIN`      | System administrator   | Full access to all features and data across all posyandu |
+| `ADMIN`            | Posyandu administrator | Full CRUD access within assigned posyandu                |
+| `TENAGA_KESEHATAN` | Healthcare worker      | CRUD medical data within assigned posyandu               |
+| `KADER_POSYANDU`   | Posyandu cadre         | CRUD medical data within assigned posyandu               |
+| `ORANG_TUA`        | Parent                 | Read-only access to own children's data                  |
+
+### Can Component
+
+**Location**: `src/components/auth/can.tsx`
+
+A reusable component for role-based access control that wraps content and controls visibility/access based on user roles.
+
+#### Props
+
+```typescript
+interface CanProps {
+  allowedRoles: Role[]; // Array of roles that can access the content
+  children: React.ReactNode; // Content to protect
+  redirectTo?: string; // Redirect path if unauthorized (default: "/dashboard")
+  hideOnly?: boolean; // If true, only hide content without redirect/toast
+}
+```
+
+#### Usage Examples
+
+**Protecting Entire Pages**:
+
+```tsx
+import { Can } from "../../../components/auth";
+
+export default function UsersListPage() {
+  return (
+    <Can allowedRoles={["SUPER_ADMIN", "ADMIN"]}>
+      <ListPageLayout>{/* Page content */}</ListPageLayout>
+    </Can>
+  );
+}
+```
+
+**Hiding Dashboard Cards** (no redirect):
+
+```tsx
+<Can allowedRoles={["SUPER_ADMIN", "ADMIN"]} hideOnly>
+  <Card>{/* Card content */}</Card>
+</Can>
+```
+
+#### Behavior
+
+- **Default Mode**: Redirects unauthorized users with toast notification
+- **Hide Only Mode** (`hideOnly={true}`): Only hides content, no redirect/toast
+- Returns `null` while loading session
+
+### Protected Pages
+
+| Page            | Path                     | Allowed Roles                                        |
+| --------------- | ------------------------ | ---------------------------------------------------- |
+| Users List      | `/dashboard/users`       | SUPER_ADMIN, ADMIN                                   |
+| Posyandu List   | `/dashboard/posyandu`    | SUPER_ADMIN, ADMIN                                   |
+| Anak List       | `/dashboard/anak`        | SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU |
+| Pengukuran List | `/dashboard/pengukuran`  | SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU |
+| My Children     | `/dashboard/my-children` | ORANG_TUA                                            |
+
+### Dashboard Summary Cards
+
+Summary cards use Can component with `hideOnly` mode for seamless UX:
+
+- **Users**: SUPER_ADMIN, ADMIN
+- **Posyandu**: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN
+- **Anak**: All roles (data scoped by backend)
+- **Ibu Hamil**: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
+- **Pengukuran**: All roles (data scoped by backend)
+- **Orang Tua**: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
+
+### Data Scoping
+
+Backend services automatically scope data based on user role:
+
+- **SUPER_ADMIN**: All data across all posyandu
+- **ADMIN/TENAGA_KESEHATAN/KADER_POSYANDU**: Data within assigned `posyanduId`
+- **ORANG_TUA**: Only own children's data
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -1327,6 +1829,17 @@ Untuk pertanyaan atau issues:
 
 ---
 
-**Last Updated**: 2025-12-29  
-**Version**: 1.0.0  
+**Last Updated**: 2026-01-01  
+**Version**: 1.1.0  
 **Maintainer**: Prof Adi Team
+
+**Recent Updates**:
+
+- ✅ Added profile management feature using Better Auth
+- ✅ Created profile validation schemas (`profile.validation.ts`)
+- ✅ Created profile skeleton component (`profile-skeleton.tsx`)
+- ✅ Implemented profile update and change password functionality
+- ✅ Added reusable dialog components (`ConfirmDialog`, `FormDialog`)
+- ✅ Refactored all list pages to use dialog components
+- ✅ Reduced ~150 lines of boilerplate code across 6 list pages
+- ✅ Improved code consistency and maintainability
