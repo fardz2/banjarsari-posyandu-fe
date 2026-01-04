@@ -13,7 +13,7 @@ import {
   deleteUser, 
   assignRole 
 } from "../../services";
-import type { CreateUserInput, UpdateUserInput, AssignRoleInput } from "../../types";
+import type { CreateUserInput, UpdateUserInput, AssignRoleInput, User } from "../../types";
 
 /**
  * Hook untuk update current user profile
@@ -24,12 +24,34 @@ export const useUpdateCurrentUser = () => {
 
   return useMutation({
     mutationFn: (data: UpdateUserInput) => updateCurrentUser(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.me() });
-      toast.success("Profile berhasil diperbarui");
+    
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.me() });
+      const previousData = queryClient.getQueryData(queryKeys.user.me());
+
+      queryClient.setQueryData(queryKeys.user.me(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: { ...old.data, ...newData, updatedAt: new Date().toISOString() }
+        };
+      });
+
+      return { previousData };
     },
-    onError: () => {
-      // Error already handled by axios interceptor
+    
+    onError: (_error, _newData, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.user.me(), context.previousData);
+      }
+    },
+    
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.me() });
+    },
+    
+    onSuccess: () => {
+      toast.success("Profile berhasil diperbarui");
     },
   });
 };
@@ -43,8 +65,41 @@ export const useCreateUser = () => {
 
   return useMutation({
     mutationFn: (data: CreateUserInput) => createUser(data),
-    onSuccess: () => {
+    
+    onMutate: async (newUser) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.lists() });
+      const previousData = queryClient.getQueryData(queryKeys.user.lists());
+
+      queryClient.setQueryData(queryKeys.user.lists(), (old: any) => {
+        if (!old) return old;
+        const tempUser = {
+          ...newUser,
+          id: `temp-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        return {
+          ...old,
+          data: [tempUser, ...old.data],
+          meta: { ...old.meta, total: old.meta.total + 1 }
+        };
+      });
+
+      return { previousData };
+    },
+    
+    onError: (_error, _newUser, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.user.lists(), context.previousData);
+      }
+      toast.error("Gagal membuat user");
+    },
+    
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+    },
+    
+    onSuccess: () => {
       toast.success("User berhasil dibuat");
     },
   });
@@ -60,11 +115,51 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserInput }) =>
       updateUser(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.user.detail(variables.id),
+    
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.lists() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.detail(id) });
+
+      const previousList = queryClient.getQueryData(queryKeys.user.lists());
+      const previousDetail = queryClient.getQueryData(queryKeys.user.detail(id));
+
+      queryClient.setQueryData(queryKeys.user.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((item: User) =>
+            item.id === id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item
+          ),
+        };
       });
+
+      queryClient.setQueryData(queryKeys.user.detail(id), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: { ...old.data, ...data, updatedAt: new Date().toISOString() }
+        };
+      });
+
+      return { previousList, previousDetail };
+    },
+    
+    onError: (_error, { id }, context) => {
+      if (context?.previousList) {
+        queryClient.setQueryData(queryKeys.user.lists(), context.previousList);
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(queryKeys.user.detail(id), context.previousDetail);
+      }
+      toast.error("Gagal memperbarui user");
+    },
+    
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.detail(id) });
+    },
+    
+    onSuccess: () => {
       toast.success("User berhasil diperbarui");
     },
   });
@@ -79,8 +174,35 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: (id: string) => deleteUser(id),
-    onSuccess: () => {
+    
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.lists() });
+      const previousData = queryClient.getQueryData(queryKeys.user.lists());
+
+      queryClient.setQueryData(queryKeys.user.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((item: User) => item.id !== id),
+          meta: { ...old.meta, total: old.meta.total - 1 }
+        };
+      });
+
+      return { previousData };
+    },
+    
+    onError: (_error, _id, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.user.lists(), context.previousData);
+      }
+      toast.error("Gagal menghapus user");
+    },
+    
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+    },
+    
+    onSuccess: () => {
       toast.success("User berhasil dihapus");
     },
   });
@@ -96,11 +218,51 @@ export const useAssignRole = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AssignRoleInput }) =>
       assignRole(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.user.detail(variables.id),
+    
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.lists() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.user.detail(id) });
+
+      const previousList = queryClient.getQueryData(queryKeys.user.lists());
+      const previousDetail = queryClient.getQueryData(queryKeys.user.detail(id));
+
+      queryClient.setQueryData(queryKeys.user.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((item: User) =>
+            item.id === id ? { ...item, role: data.role, updatedAt: new Date().toISOString() } : item
+          ),
+        };
       });
+
+      queryClient.setQueryData(queryKeys.user.detail(id), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: { ...old.data, role: data.role, updatedAt: new Date().toISOString() }
+        };
+      });
+
+      return { previousList, previousDetail };
+    },
+    
+    onError: (_error, { id }, context) => {
+      if (context?.previousList) {
+        queryClient.setQueryData(queryKeys.user.lists(), context.previousList);
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(queryKeys.user.detail(id), context.previousDetail);
+      }
+      toast.error("Gagal mengubah role");
+    },
+    
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.detail(id) });
+    },
+    
+    onSuccess: () => {
       toast.success("Role berhasil diubah");
     },
   });

@@ -79,12 +79,44 @@ export const useCreateForum = () => {
 
   return useMutation({
     mutationFn: (data: CreateForumInput) => createForum(data),
-    onSuccess: () => {
-      toast.success("Forum berhasil dibuat");
+    
+    onMutate: async (newForum) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.forum.lists() });
+      const previousData = queryClient.getQueryData(queryKeys.forum.lists());
+
+      queryClient.setQueryData(queryKeys.forum.lists(), (old: any) => {
+        if (!old) return old;
+        const tempForum = {
+          ...newForum,
+          id: Date.now(),
+          status: 'OPEN',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _count: { comments: 0 }
+        };
+        return {
+          ...old,
+          data: [tempForum, ...old.data],
+          meta: { ...old.meta, total: old.meta.total + 1 }
+        };
+      });
+
+      return { previousData };
+    },
+    
+    onError: (error: any, _newForum, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.forum.lists(), context.previousData);
+      }
+      toast.error(error.response?.data?.message || "Gagal membuat forum");
+    },
+    
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.forum.lists() });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal membuat forum");
+    
+    onSuccess: () => {
+      toast.success("Forum berhasil dibuat");
     },
   });
 };
@@ -98,13 +130,52 @@ export const useUpdateForum = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateForumInput }) =>
       updateForum(id, data),
-    onSuccess: (_data, variables) => {
-      toast.success("Forum berhasil diperbarui");
-      queryClient.invalidateQueries({ queryKey: queryKeys.forum.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.forum.detail(String(variables.id)) });
+    
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.forum.lists() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.forum.detail(String(id)) });
+
+      const previousList = queryClient.getQueryData(queryKeys.forum.lists());
+      const previousDetail = queryClient.getQueryData(queryKeys.forum.detail(String(id)));
+
+      queryClient.setQueryData(queryKeys.forum.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((item: any) =>
+            item.id === id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item
+          ),
+        };
+      });
+
+      queryClient.setQueryData(queryKeys.forum.detail(String(id)), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: { ...old.data, ...data, updatedAt: new Date().toISOString() }
+        };
+      });
+
+      return { previousList, previousDetail };
     },
-    onError: (error: any) => {
+    
+    onError: (error: any, { id }, context) => {
+      if (context?.previousList) {
+        queryClient.setQueryData(queryKeys.forum.lists(), context.previousList);
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(queryKeys.forum.detail(String(id)), context.previousDetail);
+      }
       toast.error(error.response?.data?.message || "Gagal memperbarui forum");
+    },
+    
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.forum.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.forum.detail(String(id)) });
+    },
+    
+    onSuccess: () => {
+      toast.success("Forum berhasil diperbarui");
     },
   });
 };
@@ -117,12 +188,36 @@ export const useDeleteForum = () => {
 
   return useMutation({
     mutationFn: (id: string) => deleteForum(id),
-    onSuccess: () => {
-      toast.success("Forum berhasil dihapus");
+    
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.forum.lists() });
+      const previousData = queryClient.getQueryData(queryKeys.forum.lists());
+
+      queryClient.setQueryData(queryKeys.forum.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((item: any) => item.id !== id),
+          meta: { ...old.meta, total: old.meta.total - 1 }
+        };
+      });
+
+      return { previousData };
+    },
+    
+    onError: (error: any, _id, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.forum.lists(), context.previousData);
+      }
+      toast.error(error.response?.data?.message || "Gagal menghapus forum");
+    },
+    
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.forum.lists() });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menghapus forum");
+    
+    onSuccess: () => {
+      toast.success("Forum berhasil dihapus");
     },
   });
 };
@@ -136,16 +231,57 @@ export const useAddComment = () => {
   return useMutation({
     mutationFn: ({ forumId, data }: { forumId: string; data: { content: string } }) =>
       addComment(forumId, data.content),
-    onSuccess: (_data, variables) => {
-      toast.success("Komentar berhasil ditambahkan");
-      // Invalidate specific forum detail to refresh comments
-      queryClient.invalidateQueries({ queryKey: queryKeys.forum.detail(String(variables.forumId)) });
-      // Invalidate infinite comments list to show new comment
-      queryClient.invalidateQueries({ queryKey: [...queryKeys.forum.detail(String(variables.forumId)), "comments"] });
+    
+    onMutate: async ({ forumId, data }) => {
+      const commentsKey = [...queryKeys.forum.detail(String(forumId)), "comments"];
+      await queryClient.cancelQueries({ queryKey: commentsKey });
+
+      const previousComments = queryClient.getQueryData(commentsKey);
+
+      // Optimistically add comment to infinite query
+      queryClient.setQueryData(commentsKey, (old: any) => {
+        if (!old) return old;
+        const tempComment = {
+          id: Date.now(),
+          content: data.content,
+          forumId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        return {
+          ...old,
+          pages: old.pages.map((page: any, index: number) => {
+            if (index === 0) {
+              return {
+                ...page,
+                data: [tempComment, ...page.data]
+              };
+            }
+            return page;
+          })
+        };
+      });
+
+      return { previousComments };
+    },
+    
+    onError: (error: any, { forumId }, context) => {
+      if (context?.previousComments) {
+        const commentsKey = [...queryKeys.forum.detail(String(forumId)), "comments"];
+        queryClient.setQueryData(commentsKey, context.previousComments);
+      }
+      toast.error(error.response?.data?.message || "Gagal menambahkan komentar");
+    },
+    
+    onSettled: (_data, _error, { forumId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.forum.detail(String(forumId)) });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.forum.detail(String(forumId)), "comments"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.forum.lists() });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menambahkan komentar");
+    
+    onSuccess: () => {
+      toast.success("Komentar berhasil ditambahkan");
     },
   });
 };
