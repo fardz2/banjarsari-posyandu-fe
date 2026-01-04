@@ -12,4 +12,6 @@ export const authClient = createAuthClient({
         }
     },
     credentials: "include",
+    cookiePrefix: "banjarsari",
+    
 })
