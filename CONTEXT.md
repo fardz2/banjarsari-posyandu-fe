@@ -89,6 +89,8 @@ posyandu-fe/
 │   │   │       ├── protected-layout.tsx
 │   │   │       └── dashboard-layout.tsx
 │   │   ├── skeletons/       # Loading skeletons
+│   │   │   ├── card-grid-skeleton.tsx  # Card grid skeleton for list pages
+│   │   │   ├── chart-skeleton.tsx      # Chart skeleton for dashboard
 │   │   │   ├── dashboard-layout-skeleton.tsx
 │   │   │   ├── dashboard-skeleton.tsx
 │   │   │   ├── detail-skeleton.tsx
