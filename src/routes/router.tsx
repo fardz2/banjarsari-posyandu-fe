@@ -16,7 +16,8 @@ import ForumListPage from "../pages/protected/forum/forum-list";
 import ForumDetailPage from "../pages/protected/forum/forum-detail";
 
 import DashboardLayout from "../components/layout/protected/dashboard-layout";
-import { protectedLoader, authLoader } from "../lib/auth-loaders";
+import { ProtectedRoute } from "../components/auth/protected-route";
+import { AuthRoute } from "../components/auth/auth-route";
 import { LoadingSkeleton } from "../components/skeletons/loading-skeleton";
 import { DashboardLayoutSkeleton } from "../components/skeletons/dashboard-layout-skeleton";
 
@@ -31,15 +32,21 @@ const router = createBrowserRouter([
   // --- AUTH ROUTES (Redirect to dashboard if already logged in) ---
   {
     path: "/login",
-    element: <Login />,
-    loader: authLoader, // ✅ Redirect to dashboard if already authenticated
+    element: (
+      <AuthRoute>
+        <Login />
+      </AuthRoute>
+    ),
     HydrateFallback: LoadingSkeleton,
   },
 
   // --- PROTECTED ROUTES (Require authentication) ---
   {
-    element: <DashboardLayout />, // Bungkus semua rute di bawah ini
-    loader: protectedLoader, // ✅ Check authentication before rendering
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     HydrateFallback: DashboardLayoutSkeleton,
     children: [
       {

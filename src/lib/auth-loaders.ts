@@ -1,3 +1,13 @@
+/**
+ * @deprecated This file is no longer used
+ * Authentication is now handled by component-based guards:
+ * - ProtectedRoute: src/components/auth/protected-route.tsx
+ * - AuthRoute: src/components/auth/auth-route.tsx
+ * 
+ * These components use useSession() hook instead of getSession() in loaders.
+ * Keeping this file for reference only.
+ */
+
 import { redirect } from "react-router";
 import { authClient } from "./auth-client";
 import { toast } from "sonner";
