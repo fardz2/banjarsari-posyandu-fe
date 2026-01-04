@@ -39,7 +39,7 @@ import { useForums } from "../../../hooks/forum";
 import { usePosyandu } from "../../../hooks";
 import type { ForumFilterFormValues } from "../../../utils/validations";
 import { ForumForm } from "./forum-form";
-import { DetailSkeleton } from "../../../components/skeletons/detail-skeleton";
+import { CardGridSkeleton } from "../../../components/skeletons/card-grid-skeleton";
 import ListPageLayout from "../../../components/layout/list-page-layout";
 
 export default function ForumListPage() {
@@ -130,11 +130,7 @@ export default function ForumListPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <DetailSkeleton />
-            <DetailSkeleton />
-            <DetailSkeleton />
-          </div>
+          <CardGridSkeleton count={9} />
         ) : forums.length === 0 ? (
           <div className="text-center py-12 border rounded-lg bg-muted/10 border-dashed">
             <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />

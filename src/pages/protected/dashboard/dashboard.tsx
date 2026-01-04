@@ -16,6 +16,7 @@ import {
 } from "../../../components/ui/card";
 import { useCurrentUser } from "../../../hooks";
 import { DashboardSkeleton } from "../../../components/skeletons/dashboard-skeleton";
+import { ChartSkeleton } from "../../../components/skeletons/chart-skeleton";
 import { Can } from "../../../components/auth";
 import {
   useDashboardSummary,
@@ -52,15 +53,8 @@ export default function DashboardHomePage() {
 
   const summary = summaryData?.data;
 
-  const isLoading =
-    isUserLoading ||
-    isSummaryLoading ||
-    isGenderLoading ||
-    isNutritionLoading ||
-    isPosyanduStatsLoading ||
-    isTrendLoading;
-
-  if (isLoading) {
+  // Show skeleton only while user is loading
+  if (isUserLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -207,80 +201,125 @@ export default function DashboardHomePage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {stats.map((stat) => (
-          <Can key={stat.title} allowedRoles={stat.roles as any} hideOnly>
-            <Link to={stat.href}>
-              <Card className="transition-colors hover:bg-accent h-full">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {stat.title}
-                  </CardTitle>
-                  <stat.icon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          </Can>
-        ))}
-      </div>
+      {isSummaryLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-1/3 bg-muted animate-pulse rounded mb-1" />
+                <div className="h-3 w-3/4 bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {stats.map((stat) => (
+            <Can key={stat.title} allowedRoles={stat.roles as any} hideOnly>
+              <Link to={stat.href}>
+                <Card className="transition-colors hover:bg-accent h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {stat.title}
+                    </CardTitle>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stat.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </Can>
+          ))}
+        </div>
+      )}
 
       {/* Charts Section - Visible to All Roles Except Orang Tua */}
       {user?.role !== "ORANG_TUA" && (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           {/* Visit Trends - Area Chart */}
-          <VisitTrendsChart data={trendChartData} />
+          {isTrendLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <VisitTrendsChart data={trendChartData} />
+          )}
 
           {/* Gender Stats - Pie Chart */}
-          <GenderDistributionChart data={genderChartData} />
+          {isGenderLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <GenderDistributionChart data={genderChartData} />
+          )}
 
           {/* Status Gizi (BB/TB) - Donut Chart */}
-          <NutritionalStatusChart
-            data={giziData}
-            title="Status Gizi (BB/TB)"
-            description="Distribusi status gizi anak"
-            chartType="donut"
-          />
+          {isNutritionLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <NutritionalStatusChart
+              data={giziData}
+              title="Status Gizi (BB/TB)"
+              description="Distribusi status gizi anak"
+              chartType="donut"
+            />
+          )}
 
           {/* Status Berat Badan (BB/U) - Horizontal Bar */}
-          <NutritionalStatusChart
-            data={bbUData}
-            title="Status Berat Badan (BB/U)"
-            description="Distribusi berat badan menurut umur"
-            chartType="horizontal-bar"
-            showLegend={false}
-          />
+          {isNutritionLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <NutritionalStatusChart
+              data={bbUData}
+              title="Status Berat Badan (BB/U)"
+              description="Distribusi berat badan menurut umur"
+              chartType="horizontal-bar"
+              showLegend={false}
+            />
+          )}
 
           {/* Status Tinggi Badan (TB/U) - Vertical Bar */}
-          <NutritionalStatusChart
-            data={tbUData}
-            title="Status Tinggi Badan (TB/U)"
-            description="Distribusi tinggi badan menurut umur"
-            chartType="vertical-bar"
-            showLegend={false}
-          />
+          {isNutritionLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <NutritionalStatusChart
+              data={tbUData}
+              title="Status Tinggi Badan (TB/U)"
+              description="Distribusi tinggi badan menurut umur"
+              chartType="vertical-bar"
+              showLegend={false}
+            />
+          )}
 
           {/* Status Lingkar Kepala (LK/U) - Horizontal Bar */}
-          <NutritionalStatusChart
-            data={lkUData}
-            title="Status Lingkar Kepala (LK/U)"
-            description="Distribusi lingkar kepala menurut umur"
-            chartType="horizontal-bar"
-            showLegend={false}
-          />
+          {isNutritionLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <NutritionalStatusChart
+              data={lkUData}
+              title="Status Lingkar Kepala (LK/U)"
+              description="Distribusi lingkar kepala menurut umur"
+              chartType="horizontal-bar"
+              showLegend={false}
+            />
+          )}
 
           {/* POSYANDU BREAKDOWN */}
           <Can allowedRoles={["SUPER_ADMIN", "TENAGA_KESEHATAN"]} hideOnly>
-            <NutritionalStatusByPosyanduChart
-              data={posyanduStatsData?.data || []}
-              title="Status Gizi per Posyandu"
-              description="Breakdown status gizi berdasarkan lokasi Posyandu"
-            />
+            {isPosyanduStatsLoading ? (
+              <ChartSkeleton />
+            ) : (
+              <NutritionalStatusByPosyanduChart
+                data={posyanduStatsData?.data || []}
+                title="Status Gizi per Posyandu"
+                description="Breakdown status gizi berdasarkan lokasi Posyandu"
+              />
+            )}
           </Can>
         </div>
       )}
