@@ -237,6 +237,10 @@ export const useAddComment = () => {
       await queryClient.cancelQueries({ queryKey: commentsKey });
 
       const previousComments = queryClient.getQueryData(commentsKey);
+      
+      // Get current user from session
+      const sessionData = queryClient.getQueryData(['session']) as any;
+      const currentUser = sessionData?.user;
 
       // Optimistically add comment to infinite query
       queryClient.setQueryData(commentsKey, (old: any) => {
@@ -246,7 +250,17 @@ export const useAddComment = () => {
           content: data.content,
           forumId,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          // Include user data to prevent undefined errors
+          user: currentUser ? {
+            id: currentUser.id,
+            name: currentUser.name,
+            role: currentUser.role,
+          } : {
+            id: 'temp-user',
+            name: 'Loading...',
+            role: 'ORANG_TUA',
+          }
         };
         
         return {

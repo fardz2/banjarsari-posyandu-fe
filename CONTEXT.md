@@ -662,6 +662,8 @@ export const useAnakDetail = (id: string) => {
 
 ### Mutation Hooks (POST/PUT/DELETE)
 
+**All mutations now use Optimistic Updates** for instant UI feedback:
+
 ```typescript
 // src/hooks/anak/useAnakMutations.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -673,10 +675,46 @@ export const useCreateAnak = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<Anak>) => createAnak(data),
-    onSuccess: () => {
+    mutationFn: (data: CreateAnakInput) => createAnak(data),
+
+    // Optimistic update - instant UI feedback
+    onMutate: async (newAnak) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.anak.lists() });
+      const previousData = queryClient.getQueryData(queryKeys.anak.lists());
+
+      // Update cache optimistically
+      queryClient.setQueryData(queryKeys.anak.lists(), (old: any) => {
+        if (!old) return old;
+        const tempAnak = {
+          ...newAnak,
+          nik: `temp-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+        };
+        return {
+          ...old,
+          data: [tempAnak, ...old.data],
+          meta: { ...old.meta, total: old.meta.total + 1 },
+        };
+      });
+
+      return { previousData };
+    },
+
+    // Rollback on error
+    onError: (error: any, _newAnak, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.anak.lists(), context.previousData);
+      }
+      toast.error(error.userMessage || "Gagal menambahkan data anak.");
+    },
+
+    // Sync with server
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
-      toast.success("Data anak berhasil ditambahkan");
+    },
+
+    onSuccess: () => {
+      toast.success("Data anak berhasil ditambahkan!");
     },
   });
 };
@@ -685,14 +723,57 @@ export const useUpdateAnak = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Anak> }) =>
-      updateAnak(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.anak.detail(variables.id),
+    mutationFn: ({ nik, data }: { nik: string; data: UpdateAnakInput }) =>
+      updateAnak(nik, data),
+
+    onMutate: async ({ nik, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.anak.lists() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.anak.detail(nik) });
+
+      const previousList = queryClient.getQueryData(queryKeys.anak.lists());
+      const previousDetail = queryClient.getQueryData(
+        queryKeys.anak.detail(nik)
+      );
+
+      // Update both list and detail
+      queryClient.setQueryData(queryKeys.anak.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((item: Anak) =>
+            item.nik === nik ? { ...item, ...data } : item
+          ),
+        };
       });
-      toast.success("Data anak berhasil diperbarui");
+
+      queryClient.setQueryData(queryKeys.anak.detail(nik), (old: any) => {
+        if (!old) return old;
+        return { ...old, data: { ...old.data, ...data } };
+      });
+
+      return { previousList, previousDetail };
+    },
+
+    onError: (error: any, { nik }, context) => {
+      if (context?.previousList) {
+        queryClient.setQueryData(queryKeys.anak.lists(), context.previousList);
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(
+          queryKeys.anak.detail(nik),
+          context.previousDetail
+        );
+      }
+      toast.error(error.userMessage || "Gagal memperbarui data anak.");
+    },
+
+    onSettled: (_data, _error, { nik }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.anak.detail(nik) });
+    },
+
+    onSuccess: () => {
+      toast.success("Data anak berhasil diperbarui!");
     },
   });
 };
@@ -701,14 +782,78 @@ export const useDeleteAnak = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteAnak(id),
-    onSuccess: () => {
+    mutationFn: (nik: string) => deleteAnak(nik),
+
+    onMutate: async (nik) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.anak.lists() });
+      const previousData = queryClient.getQueryData(queryKeys.anak.lists());
+
+      // Remove from cache immediately
+      queryClient.setQueryData(queryKeys.anak.lists(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((item: Anak) => item.nik !== nik),
+          meta: { ...old.meta, total: old.meta.total - 1 },
+        };
+      });
+
+      return { previousData };
+    },
+
+    onError: (error: any, _nik, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.anak.lists(), context.previousData);
+      }
+      toast.error(error.userMessage || "Gagal menghapus data anak.");
+    },
+
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
-      toast.success("Data anak berhasil dihapus");
+    },
+
+    onSuccess: () => {
+      toast.success("Data anak berhasil dihapus!");
     },
   });
 };
 ```
+
+**Optimistic Updates Pattern**:
+
+1. **`onMutate`**: Cancel queries, snapshot previous data, update cache optimistically
+2. **`onError`**: Rollback to previous data if request fails
+3. **`onSettled`**: Invalidate queries to sync with server
+4. **`onSuccess`**: Show success toast
+
+**Benefits**:
+
+- ✅ Instant UI feedback - users see changes immediately
+- ✅ Automatic rollback - changes revert if request fails
+- ✅ Better UX - application feels more responsive
+- ✅ Eventual consistency - data syncs with server after mutation
+
+**Modules with Optimistic Updates**:
+
+- Anak mutations (create, update, delete)
+- Pengukuran mutations (create, update, delete)
+- Forum mutations (create, update, delete, add comment)
+- Ibu Hamil mutations (create, update, delete)
+- Ortu mutations (update, delete)
+- User mutations (create, update, delete, assign role)
+
+  const queryClient = useQueryClient();
+
+  return useMutation({
+  mutationFn: (id: string) => deleteAnak(id),
+  onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: queryKeys.anak.lists() });
+  toast.success("Data anak berhasil dihapus");
+  },
+  });
+  };
+
+````
 
 ### Usage in Components
 
@@ -728,7 +873,7 @@ function AnakList() {
 
   return <div>{/* Render data */}</div>;
 }
-```
+````
 
 ---
 
