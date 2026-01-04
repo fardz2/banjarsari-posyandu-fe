@@ -16,8 +16,7 @@ import ForumListPage from "../pages/protected/forum/forum-list";
 import ForumDetailPage from "../pages/protected/forum/forum-detail";
 
 import DashboardLayout from "../components/layout/protected/dashboard-layout";
-import { ProtectedRoute } from "../components/auth/protected-route";
-import { AuthRoute } from "../components/auth/auth-route";
+import { protectedLoader, authLoader } from "../lib/auth-loaders";
 import { LoadingSkeleton } from "../components/skeletons/loading-skeleton";
 import { DashboardLayoutSkeleton } from "../components/skeletons/dashboard-layout-skeleton";
 
@@ -32,21 +31,15 @@ const router = createBrowserRouter([
   // --- AUTH ROUTES (Redirect to dashboard if already logged in) ---
   {
     path: "/login",
-    element: (
-      <AuthRoute>
-        <Login />
-      </AuthRoute>
-    ),
+    element: <Login />,
+    loader: authLoader,
     HydrateFallback: LoadingSkeleton,
   },
 
   // --- PROTECTED ROUTES (Require authentication) ---
   {
-    element: (
-      <ProtectedRoute>
-        <DashboardLayout />
-      </ProtectedRoute>
-    ),
+    element: <DashboardLayout />,
+    loader: protectedLoader,
     HydrateFallback: DashboardLayoutSkeleton,
     children: [
       {
