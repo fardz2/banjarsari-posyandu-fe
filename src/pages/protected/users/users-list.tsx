@@ -127,8 +127,8 @@ export default function UsersListPage() {
       ]}
     >
       <ListPageLayout
-        title="Users"
-        description="Manage user accounts and permissions"
+        title="Pengguna"
+        description="Kelola akun pengguna dan izin akses"
         headerAction={
           <div className="flex items-center gap-2">
             {hasActiveFilters && (
@@ -156,13 +156,13 @@ export default function UsersListPage() {
                 }}
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
-                Add User
+                Tambah Pengguna
               </Button>
             )}
             <FormDialog
               open={isFormOpen}
               onOpenChange={setIsFormOpen}
-              title={editingUser ? "Edit User" : "Add New User"}
+              title={editingUser ? "Edit Pengguna" : "Tambah Pengguna Baru"}
               maxWidth="lg"
               hideFooter
             >
@@ -186,10 +186,10 @@ export default function UsersListPage() {
         <ConfirmDialog
           open={deleteUserId !== null}
           onOpenChange={(open) => !open && setDeleteUserId(null)}
-          title="Are you sure?"
-          description="This action cannot be undone. This will permanently delete the user account."
-          confirmText="Delete"
-          cancelText="Cancel"
+          title="Apakah Anda yakin?"
+          description="Tindakan ini tidak dapat dibatalkan. Ini akan menghapus akun pengguna secara permanen."
+          confirmText="Hapus"
+          cancelText="Batal"
           variant="destructive"
           onConfirm={() => deleteMutation.mutate(deleteUserId!)}
           loading={deleteMutation.isPending}
@@ -207,9 +207,9 @@ export default function UsersListPage() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Assign Role</DialogTitle>
+              <DialogTitle>Tetapkan Peran</DialogTitle>
               <DialogDescription>
-                Change the role for {assignRoleUser?.name}
+                Ubah peran untuk {assignRoleUser?.name}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
@@ -240,7 +240,7 @@ export default function UsersListPage() {
                   setSelectedRole(null);
                 }}
               >
-                Cancel
+                Batal
               </Button>
               <Button
                 onClick={handleAssignRole}
@@ -250,7 +250,9 @@ export default function UsersListPage() {
                   assignRoleMutation.isPending
                 }
               >
-                {assignRoleMutation.isPending ? "Assigning..." : "Assign Role"}
+                {assignRoleMutation.isPending
+                  ? "Menetapkan..."
+                  : "Tetapkan Peran"}
               </Button>
             </DialogFooter>
           </DialogContent>

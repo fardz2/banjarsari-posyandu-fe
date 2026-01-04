@@ -6,6 +6,7 @@ import {
   SearchIcon,
   MessageCircle,
   FileIcon,
+  FilterIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -30,18 +31,22 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "../../../components/ui/pagination";
-import { FormDialog } from "../../../components/dialogs/form-dialog";
+import { FormDialog, ForumFilterDialog } from "../../../components/dialogs";
 
 import { Can } from "../../../components/auth/can";
 
 import { useForums } from "../../../hooks/forum";
+import { usePosyandu } from "../../../hooks";
+import type { ForumFilterFormValues } from "../../../utils/validations";
 import { ForumForm } from "./forum-form";
 import { DetailSkeleton } from "../../../components/skeletons/detail-skeleton";
 import ListPageLayout from "../../../components/layout/list-page-layout";
 
 export default function ForumListPage() {
   const [openCreate, setOpenCreate] = useState(false);
+  const [openFilter, setOpenFilter] = useState(false);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<ForumFilterFormValues>({});
   const [page, setPage] = useState(1);
   const limit = 9; // 3x3 grid
 
@@ -49,37 +54,66 @@ export default function ForumListPage() {
     page,
     limit,
     search: search || undefined,
+    status: filters.status,
+    posyanduId: filters.posyanduId,
   });
+
+  // Fetch posyandu for filter (TENAGA_KESEHATAN & SUPER_ADMIN)
+  const { data: posyanduResponse } = usePosyandu();
 
   const forums = response?.data || [];
   const meta = response?.meta;
+  const posyanduList = posyanduResponse?.data || [];
+
+  const handleApplyFilters = (newFilters: ForumFilterFormValues) => {
+    setFilters(newFilters);
+    setPage(1); // Reset to page 1 when filters change
+  };
 
   return (
     <ListPageLayout
       title="Forum Tanya Jawab"
       description="Diskusi dan konsultasi dengan tenaga kesehatan"
       headerAction={
-        <Can allowedRoles={["ORANG_TUA", "SUPER_ADMIN", "TENAGA_KESEHATAN"]}>
-          <Can allowedRoles={["ORANG_TUA", "SUPER_ADMIN"]} hideOnly>
-            <Button onClick={() => setOpenCreate(true)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Buat Pertanyaan
+        <div className="flex gap-2">
+          <Can allowedRoles={["TENAGA_KESEHATAN", "SUPER_ADMIN"]} hideOnly>
+            <Button variant="outline" onClick={() => setOpenFilter(true)}>
+              <FilterIcon className="mr-2 h-4 w-4" />
+              Filter
             </Button>
           </Can>
 
-          <FormDialog
-            title="Buat Pertanyaan Baru"
-            description="Ajukan pertanyaan untuk didiskusikan dengan tenaga kesehatan"
-            open={openCreate}
-            onOpenChange={setOpenCreate}
-            hideFooter={true}
-          >
-            <ForumForm onSuccess={() => setOpenCreate(false)} />
-          </FormDialog>
-        </Can>
+          <Can allowedRoles={["ORANG_TUA", "SUPER_ADMIN", "TENAGA_KESEHATAN"]}>
+            <Can allowedRoles={["ORANG_TUA", "SUPER_ADMIN"]} hideOnly>
+              <Button onClick={() => setOpenCreate(true)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Buat Pertanyaan
+              </Button>
+            </Can>
+          </Can>
+        </div>
       }
     >
       <div className="space-y-6">
+        {/* Filter Dialog */}
+        <ForumFilterDialog
+          open={openFilter}
+          onOpenChange={setOpenFilter}
+          onApplyFilters={handleApplyFilters}
+          posyandu={posyanduList}
+          currentFilters={filters}
+        />
+
+        {/* Create Dialog */}
+        <FormDialog
+          title="Buat Pertanyaan Baru"
+          description="Ajukan pertanyaan untuk didiskusikan dengan tenaga kesehatan"
+          open={openCreate}
+          onOpenChange={setOpenCreate}
+          hideFooter={true}
+        >
+          <ForumForm onSuccess={() => setOpenCreate(false)} />
+        </FormDialog>
         {/* Search Bar */}
         <div className="relative">
           <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

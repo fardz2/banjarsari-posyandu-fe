@@ -49,6 +49,8 @@ export interface PaginationParams {
   search?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  status?: string; // For forum filtering
+  posyanduId?: string; // For forum filtering
 }
 
 /**

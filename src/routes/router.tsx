@@ -63,10 +63,6 @@ const router = createBrowserRouter([
         element: <AnakListPage />,
       },
       {
-        path: "/dashboard/my-children",
-        element: <AnakListPage />, // Reusing list page which handles RBAC internally
-      },
-      {
         path: "/dashboard/anak/:nik",
         element: <AnakDetail />,
       },

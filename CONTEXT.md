@@ -80,6 +80,7 @@ posyandu-fe/
 │   │   │   ├── confirm-dialog.tsx  # Confirmation dialog wrapper
 │   │   │   ├── export-dialog.tsx   # Export data dialog
 │   │   │   ├── form-dialog.tsx     # Form dialog wrapper
+│   │   │   ├── forum-filter-dialog.tsx # Forum filter dialog (TENAGA_KESEHATAN & SUPER_ADMIN)
 │   │   │   ├── user-filter-dialog.tsx # User filter dialog
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── layout/          # Layout components
@@ -171,6 +172,7 @@ posyandu-fe/
 │   │       ├── user-filter.validation.ts
 │   │       ├── anak.validation.ts
 │   │       ├── pengukuran.validation.ts
+│   │       ├── forum-filter.validation.ts
 │   │       └── index.ts     # Barrel export
 │   ├── index.css            # Global styles dan Tailwind config
 │   └── main.tsx             # Application entry point
@@ -274,28 +276,87 @@ import { usernameClient } from "better-auth/client/plugins";
 export const authClient = createAuthClient({
   baseURL: import.meta.env.VITE_BASE_URL,
   plugins: [usernameClient()],
+  fetchOptions: {
+    headers: {
+      "x-api-key": import.meta.env.VITE_API_KEY || "",
+    },
+  },
+  credentials: "include",
+  cookiePrefix: "banjarsari",
 });
 ```
 
 ### Authentication Flow
 
 1. **Login**: Username/password authentication via `authClient`
-2. **Session**: Cookie-based session management
-3. **Protected Routes**: Menggunakan `ProtectedLayout` wrapper
+2. **Session**: Cookie-based session management with cross-origin support
+3. **Protected Routes**: Menggunakan loader-based authentication dengan `getSession()`
 4. **Auto-redirect**: Redirect ke login jika tidak authenticated
 
-### Protected Route Pattern
+### Loader-Based Authentication Pattern
+
+**File**: `src/lib/auth-loaders.ts`
+
+Project ini menggunakan **loader-based authentication** untuk melakukan pengecekan autentikasi sebelum route di-render:
+
+```typescript
+import { redirect } from "react-router";
+import { authClient } from "./auth-client";
+
+// Protected Loader - untuk route yang memerlukan autentikasi
+export const protectedLoader = async ({ request }: { request: Request }) => {
+  const session = await authClient.getSession();
+
+  if (!session?.data) {
+    const url = new URL(request.url);
+    const callbackUrl = url.pathname + url.search;
+    throw redirect(`/login?callback=${encodeURIComponent(callbackUrl)}`);
+  }
+
+  return { session: session.data };
+};
+
+// Auth Loader - untuk halaman login/register
+export const authLoader = async ({ request }: { request: Request }) => {
+  const session = await authClient.getSession();
+
+  if (session?.data) {
+    const callbackUrl = new URL(request.url).searchParams.get("callback");
+    throw redirect(callbackUrl || "/dashboard");
+  }
+
+  return null;
+};
+```
+
+**Router Configuration**:
 
 ```typescript
 // router.tsx
+// Auth routes
 {
-  element: <ProtectedLayout />,
+  path: "/login",
+  element: <Login />,
+  loader: authLoader, // Redirect to dashboard if already authenticated
+}
+
+// Protected routes
+{
+  element: <DashboardLayout />,
+  loader: protectedLoader, // Check authentication before rendering
   children: [
     { path: "/dashboard", element: <Dashboard /> },
-    // Tambahkan rute protected lainnya di sini
+    // Other protected routes...
   ],
 }
 ```
+
+**Key Points**:
+
+- ✅ Uses `getSession()` instead of `useSession()` (no React hooks in loaders)
+- ✅ Authentication check happens before component render
+- ✅ No flash of content before redirect
+- ✅ Callback URL preserved for post-login navigation
 
 ### Security Configuration
 
@@ -441,12 +502,53 @@ Dihandle otomatis oleh Better Auth:
 - **Pengukuran** (`/api/v1/pengukuran/*`) - Pengukuran antropometri anak
 - **Ibu Hamil** (`/api/v1/ibu-hamil/*`) - Data ibu hamil
 - **Ortu** (`/api/v1/ortu/*`) - Data orang tua
+- **Forum** (`/api/v1/forum/*`) - Forum tanya jawab dengan tenaga kesehatan
+  - Supports filtering by `status` (OPEN/ANSWERED/CLOSED) and `posyanduId`
+  - Filter available for TENAGA_KESEHATAN & SUPER_ADMIN roles
 
 > **Note**: Untuk detail lengkap endpoint, parameter, permission matrix, dan response format, lihat [Backend CONTEXT.md](../posyandu-be/CONTEXT.md#2-endpoint-yang-sudah-ada).
 
 ---
 
-## 🏗️ Architecture & Code Organization
+## � Localization & Language Support
+
+### Indonesian Language (Bahasa Indonesia)
+
+Aplikasi ini menggunakan **Bahasa Indonesia** sebagai bahasa utama untuk meningkatkan user experience bagi pengguna lokal.
+
+#### Localized Pages
+
+**Dashboard Page** (`src/pages/protected/dashboard/dashboard.tsx`):
+
+- Welcome message: "Selamat datang kembali"
+- Statistics cards: "Pengguna", "Lokasi posyandu aktif", "Ibu hamil terdaftar", dll.
+- Quick actions: "Aksi Cepat", "Tambah Anak Baru", "Catat Pengukuran", "Daftar Ibu Hamil"
+- Descriptions: Semua deskripsi dalam bahasa Indonesia
+
+**Users Page** (`src/pages/protected/users/users-list.tsx`):
+
+- Page title: "Pengguna"
+- Actions: "Tambah Pengguna", "Edit Pengguna", "Hapus"
+- Dialogs: "Apakah Anda yakin?", "Tetapkan Peran"
+- Descriptions: "Kelola akun pengguna dan izin akses"
+
+#### Routing Simplification
+
+**Orang Tua Route**:
+
+- ❌ Removed: `/dashboard/my-children` (duplicate route)
+- ✅ Unified: Orang Tua menggunakan `/dashboard/anak` yang sama dengan role lainnya
+- RBAC handling dilakukan di level component, bukan routing
+
+**Benefits**:
+
+- Simplified routing structure
+- Consistent URL patterns across all roles
+- Easier maintenance and navigation
+
+---
+
+## �🏗️ Architecture & Code Organization
 
 ### Layered Architecture
 

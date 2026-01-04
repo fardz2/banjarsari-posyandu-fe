@@ -5,3 +5,5 @@ export { FormDialog } from "./form-dialog";
 export type { FormDialogProps } from "./form-dialog";
 
 export { UserFilterDialog } from "./user-filter-dialog";
+
+export { ForumFilterDialog } from "./forum-filter-dialog";

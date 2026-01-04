@@ -66,10 +66,10 @@ export default function DashboardHomePage() {
 
   const stats = [
     {
-      title: "Users",
+      title: "Pengguna",
       icon: UsersIcon,
       value: summary?.users || 0,
-      description: "Total registered users",
+      description: "Total pengguna terdaftar",
       href: "/dashboard/users",
       roles: ["SUPER_ADMIN", "ADMIN"],
     },
@@ -77,7 +77,7 @@ export default function DashboardHomePage() {
       title: "Posyandu",
       icon: BuildingIcon,
       value: summary?.posyandu || 0,
-      description: "Active posyandu locations",
+      description: "Lokasi posyandu aktif",
       href: "/dashboard/posyandu",
       roles: ["SUPER_ADMIN", "ADMIN", "TENAGA_KESEHATAN"],
     },
@@ -99,7 +99,7 @@ export default function DashboardHomePage() {
       title: "Ibu Hamil",
       icon: HeartIcon,
       value: summary?.ibuHamil || 0,
-      description: "Pregnant mothers",
+      description: "Ibu hamil terdaftar",
       href: "/dashboard/ibu-hamil",
       roles: ["SUPER_ADMIN", "ADMIN", "TENAGA_KESEHATAN", "KADER_POSYANDU"],
     },
@@ -107,7 +107,7 @@ export default function DashboardHomePage() {
       title: "Pengukuran",
       icon: RulerIcon,
       value: summary?.pengukuran || 0,
-      description: "Total measurements",
+      description: "Total pengukuran",
       href: "/dashboard/pengukuran",
       roles: [
         "SUPER_ADMIN",
@@ -121,7 +121,7 @@ export default function DashboardHomePage() {
       title: "Orang Tua",
       icon: UserIcon,
       value: summary?.ortu || 0,
-      description: "Registered parents",
+      description: "Orang tua terdaftar",
       href: "/dashboard/ortu",
       roles: ["SUPER_ADMIN", "ADMIN", "TENAGA_KESEHATAN", "KADER_POSYANDU"],
     },
@@ -197,12 +197,12 @@ export default function DashboardHomePage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold">
-          Welcome back, {user?.name || user?.username}!
+          Selamat datang kembali, {user?.name || user?.username}!
         </h1>
         <p className="text-muted-foreground mt-1">
           {user?.role === "ORANG_TUA"
             ? "Pantau perkembangan kesehatan anak Anda."
-            : "Here's what's happening with your posyandu today."}
+            : "Berikut ringkasan data posyandu Anda hari ini."}
         </p>
       </div>
 
@@ -287,19 +287,19 @@ export default function DashboardHomePage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold mb-4">Aksi Cepat</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {user?.role !== "ORANG_TUA" && (
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Add New Child</CardTitle>
-                  <CardDescription>Register a new child</CardDescription>
+                  <CardTitle className="text-base">Tambah Anak Baru</CardTitle>
+                  <CardDescription>Daftarkan anak baru</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link to="/dashboard/anak/new">
                     <button className="text-sm text-primary hover:underline">
-                      Go to form →
+                      Ke formulir →
                     </button>
                   </Link>
                 </CardContent>
@@ -307,15 +307,13 @@ export default function DashboardHomePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">
-                    Record Measurement
-                  </CardTitle>
-                  <CardDescription>Add new measurement data</CardDescription>
+                  <CardTitle className="text-base">Catat Pengukuran</CardTitle>
+                  <CardDescription>Tambah data pengukuran baru</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link to="/dashboard/pengukuran/new">
                     <button className="text-sm text-primary hover:underline">
-                      Go to form →
+                      Ke formulir →
                     </button>
                   </Link>
                 </CardContent>
@@ -323,15 +321,13 @@ export default function DashboardHomePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">
-                    Register Ibu Hamil
-                  </CardTitle>
-                  <CardDescription>Add pregnant mother</CardDescription>
+                  <CardTitle className="text-base">Daftar Ibu Hamil</CardTitle>
+                  <CardDescription>Tambah ibu hamil baru</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link to="/dashboard/ibu-hamil/new">
                     <button className="text-sm text-primary hover:underline">
-                      Go to form →
+                      Ke formulir →
                     </button>
                   </Link>
                 </CardContent>
@@ -342,13 +338,13 @@ export default function DashboardHomePage() {
           {user?.role === "ORANG_TUA" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">My Children</CardTitle>
-                <CardDescription>View your children's data</CardDescription>
+                <CardTitle className="text-base">Anak Saya</CardTitle>
+                <CardDescription>Lihat data anak Anda</CardDescription>
               </CardHeader>
               <CardContent>
-                <Link to="/dashboard/my-children">
+                <Link to="/dashboard/anak">
                   <button className="text-sm text-primary hover:underline">
-                    View children →
+                    Lihat anak →
                   </button>
                 </Link>
               </CardContent>
