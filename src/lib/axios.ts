@@ -23,7 +23,7 @@ interface CustomAxiosInstance extends Omit<AxiosInstance, 'get' | 'post' | 'put'
   delete<T = any>(url: string, config?: any): Promise<T>;
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 
 const api: CustomAxiosInstance = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
