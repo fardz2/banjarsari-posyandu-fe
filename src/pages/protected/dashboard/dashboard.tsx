@@ -301,7 +301,10 @@ export default function DashboardHomePage() {
           )}
 
           {/* POSYANDU BREAKDOWN */}
-          <Can allowedRoles={["SUPER_ADMIN", "TENAGA_KESEHATAN"]} hideOnly>
+          <Can
+            allowedRoles={["SUPER_ADMIN", "ADMIN", "TENAGA_KESEHATAN"]}
+            hideOnly
+          >
             {isPosyanduStatsLoading ? (
               <ChartSkeleton />
             ) : (

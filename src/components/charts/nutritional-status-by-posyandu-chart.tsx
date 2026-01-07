@@ -76,6 +76,29 @@ export function NutritionalStatusByPosyanduChart({
           {(["gizi", "bb_u", "tb_u", "lk_u"] as const).map((key) => {
             const chartData = transformDataForTab(key);
 
+            // Define status keys specific to each category
+            const statusKeys: Record<string, string[]> = {
+              gizi: [
+                "gizi-buruk",
+                "gizi-kurang",
+                "gizi-baik",
+                "risiko-gizi-lebih",
+                "gizi-lebih",
+                "obesitas",
+              ],
+              bb_u: ["sangat-kurang", "kurang", "normal", "lebih"],
+              tb_u: ["sangat-pendek", "pendek", "normal", "tinggi"],
+              lk_u: [
+                "mikrosefalus-berat",
+                "mikrosefalus",
+                "normal",
+                "makrosefalus",
+                "makrosefalus-berat",
+              ],
+            };
+
+            const currentKeys = statusKeys[key] || [];
+
             return (
               <TabsContent key={key} value={key}>
                 <ChartContainer
@@ -99,17 +122,15 @@ export function NutritionalStatusByPosyanduChart({
                       content={<ChartLegendContent />}
                       wrapperStyle={{ fontSize: "12px" }}
                     />
-                    {["baik", "kurang", "buruk", "lebih", "obesitas"].map(
-                      (status) => (
-                        <Bar
-                          key={status}
-                          dataKey={status}
-                          stackId="a"
-                          fill={`var(--color-${status})`}
-                          radius={[0, 0, 0, 0]}
-                        />
-                      )
-                    )}
+                    {currentKeys.map((status) => (
+                      <Bar
+                        key={status}
+                        dataKey={status}
+                        stackId="a"
+                        fill={`var(--color-${status})`}
+                        radius={[0, 0, 0, 0]}
+                      />
+                    ))}
                   </BarChart>
                 </ChartContainer>
               </TabsContent>

@@ -66,39 +66,13 @@ export const useCreateUser = () => {
   return useMutation({
     mutationFn: (data: CreateUserInput) => createUser(data),
     
-    onMutate: async (newUser) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.user.lists() });
-      const previousData = queryClient.getQueryData(queryKeys.user.lists());
-
-      queryClient.setQueryData(queryKeys.user.lists(), (old: any) => {
-        if (!old) return old;
-        const tempUser = {
-          ...newUser,
-          id: `temp-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        return {
-          ...old,
-          data: [tempUser, ...old.data],
-          meta: { ...old.meta, total: old.meta.total + 1 }
-        };
-      });
-
-      return { previousData };
-    },
-    
-    onError: (_error, _newUser, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(queryKeys.user.lists(), context.previousData);
-      }
+    onError: (_error) => {
       toast.error("Gagal membuat user");
     },
     
     onSettled: async () => {
-      // Invalidate and refetch to ensure fresh data in all user lists
+      // Invalidate to ensure fresh data in all user lists
       await queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
-      await queryClient.refetchQueries({ queryKey: queryKeys.user.lists() });
     },
     
     onSuccess: () => {
