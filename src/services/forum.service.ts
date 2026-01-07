@@ -29,21 +29,6 @@ export const getForumComments = async (
 };
 
 export const createForum = async (data: CreateForumInput): Promise<ApiResponse<Forum>> => {
-  // If file exists, use FormData
-  if (data.file) {
-    const formData = new FormData();
-    formData.append("title", data.title);
-    formData.append("content", data.content);
-    formData.append("file", data.file);
-    
-    return await api.post<ApiResponse<Forum>>(BASE_URL, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  }
-  
-  // Otherwise JSON
   return await api.post<ApiResponse<Forum>>(BASE_URL, data);
 };
 

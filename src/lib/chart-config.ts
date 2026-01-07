@@ -39,108 +39,116 @@ export const nutritionChartConfig = {
     color: chartColors.tertiary,
   },
   // Status Gizi (BB/TB)
-  buruk: {
+  "gizi-buruk": {
     label: "Gizi Buruk",
     color: chartColors.danger,
   },
-  kurang: {
+  "gizi-kurang": {
     label: "Gizi Kurang",
     color: chartColors.warning,
   },
-  baik: {
+  "gizi-baik": {
     label: "Gizi Baik",
     color: chartColors.success,
   },
-  berisiko: {
-    label: "Berisiko Gizi Lebih",
+  "risiko-gizi-lebih": {
+    label: "Risiko Gizi Lebih",
     color: "#f59e0b", // amber-500
   },
-  lebih: {
+  "gizi-lebih": {
     label: "Gizi Lebih",
     color: chartColors.secondary,
   },
-  obesitas: {
+  "obesitas": {
     label: "Obesitas",
     color: chartColors.purple,
   },
+  
   // Status Tinggi Badan (TB/U)
   "sangat-pendek": {
     label: "Sangat Pendek",
     color: chartColors.danger,
   },
-  pendek: {
+  "pendek": {
     label: "Pendek",
     color: chartColors.warning,
   },
-  normal: {
-    label: "Normal",
-    color: chartColors.success,
-  },
-  tinggi: {
+  "tinggi": {
     label: "Tinggi",
     color: chartColors.secondary,
   },
+  
   // Status Berat Badan (BB/U)
   "sangat-kurang": {
-    label: "Berat Badan Sangat Kurang",
+    label: "Sangat Kurang",
     color: chartColors.danger,
   },
-  "bb-kurang": {
-    label: "Berat Badan Kurang",
+  "kurang": {
+    label: "Kurang",
     color: chartColors.warning,
   },
-  "bb-normal": {
-    label: "Berat Badan Normal",
-    color: chartColors.success,
-  },
-  // Status Lingkar Kepala (LK/U)
-  "mikrosefali-berat": {
-    label: "Mikrosefali Berat",
-    color: chartColors.danger,
-  },
-  mikrosefali: {
-    label: "Mikrosefali",
-    color: chartColors.warning,
-  },
-  makrosefali: {
-    label: "Makrosefali",
+  "lebih": {
+    label: "Lebih",
     color: chartColors.secondary,
   },
+  
+  // Status Lingkar Kepala (LK/U)
+  "mikrosefalus-berat": {
+    label: "Mikrosefalus Berat",
+    color: chartColors.danger,
+  },
+  "mikrosefalus": {
+    label: "Mikrosefalus",
+    color: chartColors.warning,
+  },
+  "makrosefalus": {
+    label: "Makrosefalus",
+    color: chartColors.secondary,
+  },
+  "makrosefalus-berat": {
+    label: "Makrosefalus Berat",
+    color: chartColors.purple,
+  },
+
+  // Shared
+  "normal": {
+    label: "Normal",
+    color: chartColors.success,
+  }
 } satisfies ChartConfig;
 
 // Helper function to normalize nutritional status
 export const normalizeStatus = (status: string): string => {
   const lowerStatus = status.toLowerCase();
   
-  // Status Gizi (BB/TB)
-  if (lowerStatus.includes("buruk")) return "buruk";
-  if (lowerStatus.includes("kurang") && lowerStatus.includes("gizi")) return "kurang";
-  if (lowerStatus.includes("berisiko")) return "berisiko";
-  if (lowerStatus.includes("lebih")) return "lebih";
-  if (lowerStatus.includes("obesitas")) return "obesitas";
-  if (lowerStatus.includes("baik") || lowerStatus.includes("normal")) {
-    // Distinguish between different "normal" statuses
-    if (lowerStatus.includes("berat badan")) return "bb-normal";
-    return "baik";
-  }
+  // Direct mappings based on new standardized strings
   
-  // Status Tinggi Badan (TB/U)
-  if (lowerStatus.includes("sangat pendek") || lowerStatus.includes("severely stunted")) return "sangat-pendek";
-  if (lowerStatus.includes("pendek") || lowerStatus.includes("stunted")) return "pendek";
-  if (lowerStatus.includes("tinggi") && !lowerStatus.includes("badan")) return "tinggi";
-  
-  // Status Berat Badan (BB/U)
-  if (lowerStatus.includes("sangat kurang")) return "sangat-kurang";
-  if (lowerStatus.includes("berat badan kurang")) return "bb-kurang";
-  if (lowerStatus.includes("berat badan normal")) return "bb-normal";
-  
-  // Status Lingkar Kepala (LK/U)
-  if (lowerStatus.includes("mikrosefali berat")) return "mikrosefali-berat";
-  if (lowerStatus.includes("mikrosefali")) return "mikrosefali";
-  if (lowerStatus.includes("makrosefali")) return "makrosefali";
-  
-  // Default to "normal" or "baik" for unrecognized statuses
-  if (lowerStatus.includes("normal")) return "normal";
+  // BB/TB
+  if (lowerStatus === "gizi buruk") return "gizi-buruk";
+  if (lowerStatus === "gizi kurang") return "gizi-kurang";
+  if (lowerStatus === "gizi baik") return "gizi-baik";
+  if (lowerStatus === "risiko gizi lebih") return "risiko-gizi-lebih";
+  if (lowerStatus === "gizi lebih") return "gizi-lebih";
+  if (lowerStatus === "obesitas") return "obesitas";
+
+  // TB/U
+  if (lowerStatus === "sangat pendek") return "sangat-pendek";
+  if (lowerStatus === "pendek") return "pendek";
+  if (lowerStatus === "tinggi") return "tinggi";
+
+  // BB/U
+  if (lowerStatus === "sangat kurang") return "sangat-kurang";
+  if (lowerStatus === "kurang") return "kurang";
+  if (lowerStatus === "lebih") return "lebih";
+
+  // LK/U
+  if (lowerStatus === "mikrosefalus berat") return "mikrosefalus-berat";
+  if (lowerStatus === "mikrosefalus") return "mikrosefalus";
+  if (lowerStatus === "makrosefalus") return "makrosefalus";
+  if (lowerStatus === "makrosefalus berat") return "makrosefalus-berat";
+
+  // Shared
+  if (lowerStatus === "normal") return "normal";
   
   return "count"; // fallback
 };

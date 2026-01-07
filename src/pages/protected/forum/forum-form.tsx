@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,7 +29,6 @@ interface ForumFormProps {
 }
 
 export function ForumForm({ initialData, onSuccess }: ForumFormProps) {
-  const [file, setFile] = useState<File | null>(null);
   const createMutation = useCreateForum();
   const updateMutation = useUpdateForum();
 
@@ -61,7 +59,6 @@ export function ForumForm({ initialData, onSuccess }: ForumFormProps) {
         const input: CreateForumInput = {
           title: values.title,
           content: values.content,
-          file: file || undefined,
         };
         await createMutation.mutateAsync(input);
       }
@@ -106,20 +103,6 @@ export function ForumForm({ initialData, onSuccess }: ForumFormProps) {
               </Field>
             )}
           />
-
-          {!isEditing && (
-            <Field>
-              <FieldLabel>Lampiran (Opsional)</FieldLabel>
-              <Input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="cursor-pointer"
-              />
-              <p className="text-[0.8rem] text-muted-foreground mt-2">
-                Format: Gambar (JPG, PNG) atau PDF. Maks 5MB.
-              </p>
-            </Field>
-          )}
         </FieldGroup>
 
         <div className="flex justify-end gap-2 pt-4">

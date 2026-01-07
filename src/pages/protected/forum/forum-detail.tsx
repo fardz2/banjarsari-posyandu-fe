@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { format } from "date-fns";
@@ -11,7 +9,6 @@ import {
   Trash2,
   Send,
   Loader2,
-  FileIcon,
   User as UserIcon,
   ArrowLeftIcon,
 } from "lucide-react";
@@ -241,39 +238,6 @@ export default function ForumDetailPage() {
               {forum.content}
             </p>
           </div>
-
-          {/* Attachment */}
-          {forum.attachmentUrl && (
-            <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 border-dashed transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-2.5 rounded-lg shadow-sm">
-                  <FileIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="text-sm font-medium truncate text-blue-900 dark:text-blue-100">
-                    {forum.attachmentName || "Lampiran Dokumen"}
-                  </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider font-semibold mt-0.5">
-                    Attachment
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 border-blue-200 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-800 dark:hover:bg-blue-900/50"
-                  asChild
-                >
-                  <a
-                    href={forum.attachmentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Unduh File
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </CardContent>
       </Card>
 
