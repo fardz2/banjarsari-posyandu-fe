@@ -9,6 +9,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Pie,
   PieChart,
   XAxis,
@@ -84,7 +85,14 @@ export function NutritionalStatusChart({
             />
             <XAxis dataKey="count" type="number" hide />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={5} />
+            <Bar dataKey="count" radius={5}>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.fill || "var(--color-count)"}
+                />
+              ))}
+            </Bar>
           </BarChart>
         );
 
@@ -103,7 +111,14 @@ export function NutritionalStatusChart({
               }
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={5} />
+            <Bar dataKey="count" radius={5}>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.fill || "var(--color-count)"}
+                />
+              ))}
+            </Bar>
           </BarChart>
         );
 
