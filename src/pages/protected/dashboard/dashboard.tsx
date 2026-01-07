@@ -71,7 +71,7 @@ export default function DashboardHomePage() {
       value: summary?.posyandu || 0,
       description: "Lokasi posyandu aktif",
       href: "/dashboard/posyandu",
-      roles: ["SUPER_ADMIN", "ADMIN", "TENAGA_KESEHATAN"],
+      roles: ["SUPER_ADMIN", "TENAGA_KESEHATAN"],
     },
     {
       title: "Anak",
