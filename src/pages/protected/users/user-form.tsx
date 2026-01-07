@@ -6,6 +6,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { PasswordInput } from "../../../components/ui/password-input";
 import {
   Field,
   FieldError,
@@ -208,7 +209,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Password</FieldLabel>
-                  <Input type="password" placeholder="******" {...field} />
+                  <PasswordInput placeholder="******" {...field} />
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               )}

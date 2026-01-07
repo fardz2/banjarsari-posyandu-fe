@@ -18,6 +18,7 @@ import {
 } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { PasswordInput } from "../../../components/ui/password-input";
 import { Field, FieldLabel, FieldError } from "../../../components/ui/field";
 import { ProfileSkeleton } from "../../../components/skeletons/profile-skeleton";
 import { Separator } from "../../../components/ui/separator";
@@ -241,10 +242,9 @@ export default function ProfilePage() {
                     <FieldLabel htmlFor="currentPassword">
                       Password Saat Ini
                     </FieldLabel>
-                    <Input
+                    <PasswordInput
                       {...field}
                       id="currentPassword"
-                      type="password"
                       placeholder="Masukkan password saat ini"
                       disabled={isChangingPassword}
                       autoComplete="current-password"
@@ -262,10 +262,9 @@ export default function ProfilePage() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="newPassword">Password Baru</FieldLabel>
-                    <Input
+                    <PasswordInput
                       {...field}
                       id="newPassword"
-                      type="password"
                       placeholder="Masukkan password baru (min. 6 karakter)"
                       disabled={isChangingPassword}
                       autoComplete="new-password"
@@ -285,10 +284,9 @@ export default function ProfilePage() {
                     <FieldLabel htmlFor="confirmPassword">
                       Konfirmasi Password Baru
                     </FieldLabel>
-                    <Input
+                    <PasswordInput
                       {...field}
                       id="confirmPassword"
-                      type="password"
                       placeholder="Konfirmasi password baru"
                       disabled={isChangingPassword}
                       autoComplete="new-password"

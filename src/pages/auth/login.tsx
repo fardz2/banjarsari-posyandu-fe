@@ -21,6 +21,7 @@ import {
   FieldLabel,
 } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
+import { PasswordInput } from "../../components/ui/password-input";
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
 import { loginSchema, type LoginFormValues } from "../../utils/validations";
@@ -169,10 +170,9 @@ export default function LoginPage() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
+                    <PasswordInput
                       {...field}
                       id="password"
-                      type="password"
                       placeholder="••••••••"
                       autoComplete="current-password"
                       disabled={isLoading}

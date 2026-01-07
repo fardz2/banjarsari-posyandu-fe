@@ -92,7 +92,6 @@ export default function IbuHamilListPage() {
         <DataTable
           columns={columns}
           data={ibuHamilData?.data || []}
-          searchKey="nama"
           isLoading={isLoading}
           searchPlaceholder="Cari nama ibu hamil..."
         />

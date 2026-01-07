@@ -1,9 +1,8 @@
 import * as React from "react";
-import { PlusIcon, FilterIcon, X } from "lucide-react";
+import { PlusIcon, FilterIcon } from "lucide-react";
 import { useUsers, useDeleteUser, useAssignRole } from "../../../hooks";
 import { usePosyandu } from "../../../hooks/posyandu/usePosyandu";
 import { Button } from "../../../components/ui/button";
-import { Badge } from "../../../components/ui/badge";
 import { DataTable } from "../../../components/ui/data-table";
 import {
   ConfirmDialog,
@@ -98,25 +97,6 @@ export default function UsersListPage() {
 
   const handleApplyFilters = (newFilters: UserFilterFormValues) => {
     setFilters(newFilters);
-  };
-
-  const handleClearFilters = () => {
-    setFilters({});
-  };
-
-  const hasActiveFilters =
-    (filters.roles && filters.roles.length > 0) ||
-    (filters.posyanduIds && filters.posyanduIds.length > 0);
-
-  const getFilterBadgeText = () => {
-    const badges: string[] = [];
-    if (filters.roles && filters.roles.length > 0) {
-      badges.push(`${filters.roles.length} role`);
-    }
-    if (filters.posyanduIds && filters.posyanduIds.length > 0) {
-      badges.push(`${filters.posyanduIds.length} posyandu`);
-    }
-    return badges.join(", ");
   };
 
   const columns = React.useMemo(
