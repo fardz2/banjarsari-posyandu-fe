@@ -33,7 +33,6 @@ export const useUsers = (params?: PaginationParams & UserFilterParams) => {
     queryFn: () => getAllUsers(params),
   });
 };
-
 /**
  * Hook untuk get user by ID
  * GET /api/v1/users/:id

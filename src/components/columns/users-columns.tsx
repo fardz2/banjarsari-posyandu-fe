@@ -2,6 +2,7 @@ import { EditIcon, TrashIcon, ShieldIcon } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { User, Role } from "../../types";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
 interface UsersColumnsProps {
   onEdit?: (user: User) => void;
@@ -9,17 +10,31 @@ interface UsersColumnsProps {
   onAssignRole?: (user: User) => void;
 }
 
-const getRoleBadgeColor = (role: Role) => {
-  const colors: Record<Role, string> = {
-    SUPER_ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    TENAGA_KESEHATAN:
-      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    KADER_POSYANDU:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    ORANG_TUA: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+const getRoleBadgeVariant = (
+  role: Role
+): "default" | "secondary" | "destructive" | "outline" => {
+  const variants: Record<
+    Role,
+    "default" | "secondary" | "destructive" | "outline"
+  > = {
+    SUPER_ADMIN: "destructive",
+    ADMIN: "default",
+    TENAGA_KESEHATAN: "default",
+    KADER_POSYANDU: "secondary",
+    ORANG_TUA: "outline",
   };
-  return colors[role] || "bg-gray-100 text-gray-800";
+  return variants[role] || "outline";
+};
+
+const getRoleLabel = (role: Role): string => {
+  const labels: Record<Role, string> = {
+    SUPER_ADMIN: "Super Admin",
+    ADMIN: "Admin",
+    TENAGA_KESEHATAN: "Tenaga Kesehatan",
+    KADER_POSYANDU: "Kader Posyandu",
+    ORANG_TUA: "Orang Tua",
+  };
+  return labels[role] || role;
 };
 
 export const createUsersColumns = ({
@@ -40,6 +55,11 @@ export const createUsersColumns = ({
     cell: ({ row }) => <div>{row.getValue("username") || "-"}</div>,
   },
   {
+    accessorKey: "jenisKelamin",
+    header: "Jenis Kelamin",
+    cell: ({ row }) => <div>{row.getValue("jenisKelamin") || "-"}</div>,
+  },
+  {
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => <div>{row.getValue("email")}</div>,
@@ -50,13 +70,7 @@ export const createUsersColumns = ({
     cell: ({ row }) => {
       const role = row.getValue("role") as Role;
       return (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeColor(
-            role
-          )}`}
-        >
-          {role}
-        </span>
+        <Badge variant={getRoleBadgeVariant(role)}>{getRoleLabel(role)}</Badge>
       );
     },
   },

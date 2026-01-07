@@ -8,13 +8,18 @@ import { usePosyandu } from "../../../hooks/posyandu/usePosyandu";
 import { Button } from "../../../components/ui/button";
 import { DataTable } from "../../../components/ui/data-table";
 
-import { ConfirmDialog, FormDialog } from "../../../components/dialogs";
+import {
+  ConfirmDialog,
+  FormDialog,
+  QuickPengukuranDialog,
+} from "../../../components/dialogs";
 import { ExportDialog } from "../../../components/dialogs/export-dialog";
 import AnakForm from "./anak-form";
 import ListPageLayout from "../../../components/layout/list-page-layout";
 import { createAnakColumns } from "../../../components/columns";
 import { Can } from "../../../components/auth";
 import { AnakCard } from "../../../components/cards/anak-card";
+import type { Anak } from "../../../types";
 
 import { authClient } from "../../../lib/auth-client";
 
@@ -28,6 +33,7 @@ export default function AnakListPage() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
   const [editingNik, setEditingNik] = React.useState<string | null>(null);
+  const [quickInputAnak, setQuickInputAnak] = React.useState<Anak | null>(null);
 
   // Toggle hooks based on role
   // Wait for session to load before fetching to avoid 403 for ORANG_TUA
@@ -53,6 +59,7 @@ export default function AnakListPage() {
   const isSuperAdmin = userRole === "SUPER_ADMIN";
   const isAdmin = userRole === "ADMIN";
   const isKader = userRole === "KADER_POSYANDU";
+  const isTenagaKesehatan = userRole === "TENAGA_KESEHATAN";
 
   // Kader can create/edit but not delete
   const canEdit = isSuperAdmin || isAdmin || isKader;
@@ -63,14 +70,19 @@ export default function AnakListPage() {
     setIsDialogOpen(true);
   };
 
+  const handleQuickInput = (anak: Anak) => {
+    setQuickInputAnak(anak);
+  };
+
   const columns = React.useMemo(
     () =>
       createAnakColumns({
         onEdit: canEdit ? handleEdit : undefined,
         onDelete: canDelete ? setDeleteNik : undefined,
-        hideManagement: isOrtu,
+        onQuickInput: !isOrtu ? handleQuickInput : undefined,
+        hideManagement: isOrtu || isTenagaKesehatan,
       }),
-    [isOrtu, canEdit, canDelete]
+    [isOrtu, isTenagaKesehatan, canEdit, canDelete]
   );
 
   return (
@@ -154,7 +166,6 @@ export default function AnakListPage() {
           <DataTable
             columns={columns}
             data={anakData?.data || []}
-            searchKey="nama"
             isLoading={isLoading}
             searchPlaceholder="Cari nama anak..."
           />
@@ -170,6 +181,13 @@ export default function AnakListPage() {
           variant="destructive"
           onConfirm={() => deleteMutation.mutate(deleteNik!)}
           loading={deleteMutation.isPending}
+        />
+
+        {/* Quick Pengukuran Dialog */}
+        <QuickPengukuranDialog
+          open={!!quickInputAnak}
+          onOpenChange={(open) => !open && setQuickInputAnak(null)}
+          anak={quickInputAnak}
         />
 
         {/* Export Dialog */}

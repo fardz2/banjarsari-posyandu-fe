@@ -78,7 +78,6 @@ export default function PosyanduListPage() {
         <DataTable
           columns={columns}
           data={posyanduData?.data || []}
-          searchKey="nama"
           isLoading={isLoading}
           searchPlaceholder="Cari nama posyandu..."
         />

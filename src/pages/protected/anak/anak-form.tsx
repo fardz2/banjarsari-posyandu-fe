@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/ui/select";
+import { FormSkeleton } from "../../../components/skeletons/form-skeleton";
+import { OrtuCombobox } from "../../../components/form/ortu-combobox";
 
 import { useAnakDetail } from "../../../hooks/anak/useAnak";
 import {
@@ -27,6 +27,7 @@ import {
   useUpdateAnak,
 } from "../../../hooks/anak/useAnakMutations";
 import { usePosyandu } from "../../../hooks/posyandu/usePosyandu";
+import { useOrtu } from "../../../hooks/ortu/useOrtu";
 import { anakSchema, type AnakFormValues } from "../../../utils/validations";
 
 export default function AnakForm({
@@ -45,7 +46,10 @@ export default function AnakForm({
     }
   );
 
-  const { data: posyanduData } = usePosyandu({ limit: 100 });
+  const { data: posyanduData, isLoading: isLoadingPosyandu } = usePosyandu({
+    limit: 100,
+  });
+  const { data: ortuData, isLoading: isLoadingOrtu } = useOrtu({ limit: 100 });
 
   const createMutation = useCreateAnak();
   const updateMutation = useUpdateAnak();
@@ -56,10 +60,11 @@ export default function AnakForm({
       nik: "",
       nama: "",
       jenisKelamin: "Laki-laki",
-      tglLahir: new Date().toISOString().split("T")[0],
+      tglLahir: "",
       bbLahir: undefined,
       tbLahir: undefined,
       posyanduId: 0,
+      ortuId: undefined,
     },
   });
 
@@ -75,20 +80,25 @@ export default function AnakForm({
         bbLahir: data.bbLahir || undefined,
         tbLahir: data.tbLahir || undefined,
         posyanduId: data.posyanduId,
+        ortuId: data.ortuId || undefined,
       });
     }
   }, [anakData, form]);
 
   const onSubmit = async (values: AnakFormValues) => {
     try {
+      const payload = {
+        ...values,
+      };
+
       if (isEdit && nik) {
         await updateMutation.mutateAsync({
           nik: nik,
-          data: values,
+          data: payload,
         });
         toast.success("Data anak berhasil diperbarui");
       } else {
-        await createMutation.mutateAsync(values);
+        await createMutation.mutateAsync(payload);
         toast.success("Data anak berhasil ditambahkan");
       }
       onSuccess?.();
@@ -98,8 +108,12 @@ export default function AnakForm({
     }
   };
 
-  const isLoading =
-    createMutation.isPending || updateMutation.isPending || isLoadingDetail;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  // Show skeleton while loading data for edit mode
+  if (isEdit && isLoadingDetail) {
+    return <FormSkeleton fieldCount={8} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -116,7 +130,6 @@ export default function AnakForm({
                     placeholder="16 digit NIK"
                     {...field}
                     disabled={isEdit}
-                    maxLength={16}
                   />
                   <FieldError errors={[fieldState.error]} />
                 </Field>
@@ -129,7 +142,7 @@ export default function AnakForm({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Nama Lengkap</FieldLabel>
-                  <Input placeholder="Nama Anak" {...field} />
+                  <Input placeholder="Nama anak" {...field} />
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               )}
@@ -144,12 +157,12 @@ export default function AnakForm({
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Jenis Kelamin</FieldLabel>
                   <Select
+                    key={field.value}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    value={field.value}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Pilih jenis kelamin" />
+                      <SelectValue placeholder="Pilih Jenis Kelamin" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -184,7 +197,7 @@ export default function AnakForm({
                   <Input
                     type="number"
                     step="0.1"
-                    placeholder="3.2"
+                    placeholder="3.5"
                     {...field}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -225,11 +238,19 @@ export default function AnakForm({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel>Posyandu</FieldLabel>
                 <Select
+                  key={field.value} // Force re-render when value changes
                   onValueChange={(val) => field.onChange(Number(val))}
-                  value={field.value ? field.value.toString() : ""}
+                  defaultValue={field.value ? field.value.toString() : ""}
+                  disabled={isLoadingPosyandu}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih Posyandu" />
+                    <SelectValue
+                      placeholder={
+                        isLoadingPosyandu
+                          ? "Memuat data posyandu..."
+                          : "Pilih Posyandu"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {posyanduData?.data?.map((posyandu) => (
@@ -242,6 +263,28 @@ export default function AnakForm({
                     ))}
                   </SelectContent>
                 </Select>
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="ortuId"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Orang Tua</FieldLabel>
+                <OrtuCombobox
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={ortuData?.data}
+                  disabled={isLoadingOrtu}
+                  placeholder={
+                    isLoadingOrtu
+                      ? "Memuat data orang tua..."
+                      : "Pilih Orang Tua"
+                  }
+                />
                 <FieldError errors={[fieldState.error]} />
               </Field>
             )}

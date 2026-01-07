@@ -2078,17 +2078,79 @@ Untuk pertanyaan atau issues:
 
 ---
 
-**Last Updated**: 2026-01-01  
-**Version**: 1.1.0  
+**Last Updated**: 2026-01-07  
+**Version**: 1.3.0  
 **Maintainer**: Prof Adi Team
 
 **Recent Updates**:
 
-- ✅ Added profile management feature using Better Auth
-- ✅ Created profile validation schemas (`profile.validation.ts`)
-- ✅ Created profile skeleton component (`profile-skeleton.tsx`)
-- ✅ Implemented profile update and change password functionality
-- ✅ Added reusable dialog components (`ConfirmDialog`, `FormDialog`)
-- ✅ Refactored all list pages to use dialog components
-- ✅ Reduced ~150 lines of boilerplate code across 6 list pages
-- ✅ Improved code consistency and maintainability
+- ✅ **Dual-Path Pengukuran Input System** (2026-01-07):
+  - Implemented `QuickPengukuranDialog` for fast batch input from list page (Kader workflow)
+  - Implemented `EditPengukuranDialog` for context-aware editing from detail page
+  - Both dialogs use `FormDialog` wrapper with `hideFooter={true}` pattern
+  - Added LILA field to match all measurement fields
+  - Created `pengukuran-detail-columns.tsx` for anak detail page table
+  - Centralized validation schemas in `utils/validations/pengukuran.validation.ts`
+  - Added `pengukuranFormSchema` for dialog forms (string date input)
+  - Separate schemas for API (`createPengukuranSchema`, `updatePengukuranSchema`)
+- ✅ **DataTable Global Search** (2026-01-07):
+
+  - Upgraded DataTable component to use global filter instead of single-column search
+  - Search now works across ALL columns automatically
+  - Removed `searchKey` prop (breaking change - now optional/unused)
+  - Updated default placeholder to "Cari..." (Indonesian)
+  - Improved mobile responsiveness with flex layout
+  - All list pages automatically benefit from enhanced search
+
+- ✅ **Badge Component Standardization** (2026-01-07):
+
+  - Refactored `users-columns.tsx` to use Badge component for role display
+  - Refactored `pengukuran-columns.tsx` to use Badge for status fields
+  - Refactored `pengukuran-detail-columns.tsx` to use Badge components
+  - Added helper functions: `getStatusBadgeVariant()`, `getNaikBBBadgeVariant()`, `getRoleBadgeVariant()`
+  - Improved role labels: "Super Admin", "Tenaga Kesehatan", "Kader Posyandu", "Orang Tua"
+  - Consistent color coding: destructive (red) for critical status, secondary for warnings, default for normal
+  - Better visual hierarchy and readability across all tables
+
+- ✅ **UI/UX Improvements** (2026-01-07):
+
+  - Updated application branding from "Posyandu Banjarsari" to "KMS Banjarsari"
+  - Updated sidebar navigation labels to be more descriptive:
+    - "Dashboard" → "Beranda"
+    - "Pengguna" → "Kelola Pengguna"
+    - "Posyandu" → "Daftar Posyandu"
+    - "Anak" → "Data Anak"
+    - "Pengukuran" → "Riwayat Pengukuran"
+    - "Orang Tua" → "Data Orang Tua"
+    - "Forum" → "Forum Konsultasi"
+  - Updated anak-columns to show full gender labels ("Laki-laki"/"Perempuan") instead of abbreviations
+  - Improved search placeholders across all pages for better UX
+
+- ✅ **Code Organization** (2026-01-07):
+
+  - Moved validation schemas to centralized location (`utils/validations/`)
+  - Created separate column files for different contexts (list vs detail)
+  - Exported all column creators from `components/columns/index.ts`
+  - Improved code reusability and maintainability
+
+- ✅ **UI/UX Improvements** (2026-01-06):
+  - Implemented conditional rendering for `jenisKelamin` field in `UserForm` (visible only for `ORANG_TUA` role)
+  - Integrated `ScrollArea` component in `FormDialog` for better long form handling
+  - Hidden all "Ibu Hamil" feature references from frontend (stat card, quick action, sidebar navigation)
+- ✅ **Loading States** (2026-01-04):
+  - Converted all full-page loading spinners to skeleton components
+  - Created comprehensive skeleton components for all page types
+  - Improved perceived performance and user experience
+- ✅ **Dashboard Fixes** (2026-01-06):
+  - Fixed `ORANG_TUA` role dashboard statistics to correctly show children and measurements count
+  - Updated backend `dashboard.service.ts` for proper role-based data scoping
+- ✅ **Profile Management** (2026-01-01):
+  - Added profile management feature using Better Auth
+  - Created profile validation schemas (`profile.validation.ts`)
+  - Created profile skeleton component (`profile-skeleton.tsx`)
+  - Implemented profile update and change password functionality
+- ✅ **Dialog Components** (2025-12-31):
+  - Added reusable dialog components (`ConfirmDialog`, `FormDialog`)
+  - Refactored all list pages to use dialog components
+  - Reduced ~150 lines of boilerplate code across 6 list pages
+  - Improved code consistency and maintainability

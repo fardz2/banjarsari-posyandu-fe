@@ -1,6 +1,6 @@
 /**
  * User Filter Dialog Component
- * Dialog untuk filter user berdasarkan role dan posyandu (SUPER_ADMIN only)
+ * Dialog untuk filter user berdasarkan role dan posyandu (multiselect)
  */
 
 import { useForm, Controller } from "react-hook-form";
@@ -17,13 +17,7 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Field, FieldLabel, FieldGroup } from "../ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+import { MultiSelect } from "../ui/multi-select";
 import {
   userFilterSchema,
   type UserFilterFormValues,
@@ -56,8 +50,8 @@ export function UserFilterDialog({
   const form = useForm<UserFilterFormValues>({
     resolver: zodResolver(userFilterSchema),
     defaultValues: currentFilters || {
-      role: undefined,
-      posyanduId: undefined,
+      roles: [],
+      posyanduIds: [],
     },
   });
 
@@ -68,83 +62,93 @@ export function UserFilterDialog({
 
   function handleClearFilters() {
     form.reset({
-      role: undefined,
-      posyanduId: undefined,
+      roles: [],
+      posyanduIds: [],
     });
     onApplyFilters({});
     onOpenChange(false);
   }
 
+  const selectedRoles = form.watch("roles") || [];
+  const selectedPosyanduIds = form.watch("posyanduIds") || [];
+
+  // Convert roles to options
+  const roleOptions = ROLES.map((role) => ({
+    label: role,
+    value: role,
+  }));
+
+  // Convert posyandu to options
+  const posyanduOptions = posyandu.map((p) => ({
+    label: p.nama,
+    value: String(p.id),
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FilterIcon className="h-5 w-5" />
-            Filter Users
+            Filter Pengguna
           </DialogTitle>
           <DialogDescription>
-            Filter daftar user berdasarkan role dan posyandu.
+            Filter daftar pengguna berdasarkan role dan posyandu. Kosongkan
+            untuk menampilkan semua.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} id="filter-form">
           <FieldGroup>
-            {/* Role Filter */}
+            {/* Role Filter (Multiselect) */}
             <Controller
-              name="role"
+              name="roles"
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel htmlFor="role">Role (Opsional)</FieldLabel>
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={(value) =>
-                      field.onChange(value || undefined)
-                    }
-                  >
-                    <SelectTrigger id="role">
-                      <SelectValue placeholder="Semua Role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FieldLabel>
+                    Role{" "}
+                    {selectedRoles.length > 0 && (
+                      <span className="text-muted-foreground text-xs font-normal">
+                        ({selectedRoles.length} dipilih)
+                      </span>
+                    )}
+                  </FieldLabel>
+                  <MultiSelect
+                    options={roleOptions}
+                    selected={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="Pilih role..."
+                    emptyText="Role tidak ditemukan."
+                    searchPlaceholder="Cari role..."
+                  />
                 </Field>
               )}
             />
 
-            {/* Posyandu Filter (SUPER_ADMIN only) */}
+            {/* Posyandu Filter (Multiselect - SUPER_ADMIN only) */}
             {posyandu.length > 0 && (
               <Controller
-                name="posyanduId"
+                name="posyanduIds"
                 control={form.control}
                 render={({ field }) => (
                   <Field>
-                    <FieldLabel htmlFor="posyanduId">
-                      Posyandu (Opsional)
+                    <FieldLabel>
+                      Posyandu{" "}
+                      {selectedPosyanduIds.length > 0 && (
+                        <span className="text-muted-foreground text-xs font-normal">
+                          ({selectedPosyanduIds.length} dipilih)
+                        </span>
+                      )}
                     </FieldLabel>
-                    <Select
-                      value={field.value || ""}
-                      onValueChange={(value) =>
-                        field.onChange(value || undefined)
-                      }
-                    >
-                      <SelectTrigger id="posyanduId">
-                        <SelectValue placeholder="Semua Posyandu" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {posyandu.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>
-                            {p.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiSelect
+                      options={posyanduOptions}
+                      selected={field.value || []}
+                      onChange={field.onChange}
+                      placeholder="Pilih posyandu..."
+                      emptyText="Posyandu tidak ditemukan."
+                      searchPlaceholder="Cari posyandu..."
+                    />
                   </Field>
                 )}
               />
@@ -152,7 +156,7 @@ export function UserFilterDialog({
           </FieldGroup>
         </form>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="space-x-2 sm:gap-0">
           <Button
             type="button"
             variant="outline"

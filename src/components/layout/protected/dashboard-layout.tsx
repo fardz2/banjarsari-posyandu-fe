@@ -8,7 +8,6 @@ import {
   Building,
   Baby,
   Ruler,
-  Heart,
   User,
   LogOut,
   UserCircle,
@@ -53,10 +52,9 @@ import {
 
 import type { Role } from "../../../types";
 
-// Navigation items without grouping
 const navigationItems = [
   {
-    title: "Dashboard",
+    title: "Beranda",
     url: "/dashboard",
     icon: LayoutDashboard,
     roles: [
@@ -68,19 +66,19 @@ const navigationItems = [
     ] as Role[],
   },
   {
-    title: "Users",
+    title: "Kelola Pengguna",
     url: "/dashboard/users",
     icon: Users,
     roles: ["SUPER_ADMIN", "ADMIN"] as Role[],
   },
   {
-    title: "Posyandu",
+    title: "Daftar Posyandu",
     url: "/dashboard/posyandu",
     icon: Building,
     roles: ["SUPER_ADMIN", "TENAGA_KESEHATAN"] as Role[],
   },
   {
-    title: "Anak",
+    title: "Data Anak",
     url: "/dashboard/anak",
     icon: Baby,
     roles: [
@@ -88,16 +86,11 @@ const navigationItems = [
       "ADMIN",
       "TENAGA_KESEHATAN",
       "KADER_POSYANDU",
+      "ORANG_TUA",
     ] as Role[],
   },
   {
-    title: "My Children",
-    url: "/dashboard/my-children",
-    icon: Baby,
-    roles: ["ORANG_TUA"] as Role[],
-  },
-  {
-    title: "Pengukuran",
+    title: "Riwayat Pengukuran",
     url: "/dashboard/pengukuran",
     icon: Ruler,
     roles: [
@@ -108,18 +101,7 @@ const navigationItems = [
     ] as Role[],
   },
   {
-    title: "Ibu Hamil",
-    url: "/dashboard/ibu-hamil",
-    icon: Heart,
-    roles: [
-      "SUPER_ADMIN",
-      "ADMIN",
-      "TENAGA_KESEHATAN",
-      "KADER_POSYANDU",
-    ] as Role[],
-  },
-  {
-    title: "Orang Tua",
+    title: "Data Orang Tua",
     url: "/dashboard/ortu",
     icon: User,
     roles: [
@@ -130,7 +112,7 @@ const navigationItems = [
     ] as Role[],
   },
   {
-    title: "Forum",
+    title: "Forum Konsultasi",
     url: "/dashboard/forum",
     icon: MessageSquare,
     roles: ["SUPER_ADMIN", "TENAGA_KESEHATAN", "ORANG_TUA"] as Role[],
@@ -196,9 +178,7 @@ function DashboardLayoutContent() {
             <Building className="h-6 w-6 shrink-0" />
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
-                <span className="font-semibold truncate">
-                  Posyandu Banjarsari
-                </span>
+                <span className="font-semibold truncate">KMS Banjarsari</span>
               </div>
             )}
           </div>
@@ -304,7 +284,7 @@ function DashboardLayoutContent() {
           <SidebarTrigger className="-ml-1" />
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <h1 className="text-lg font-semibold truncate">
-              Sistem Informasi Posyandu
+              Sistem Informasi KMS Banjarsari
             </h1>
           </div>
         </header>

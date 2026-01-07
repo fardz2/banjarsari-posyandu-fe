@@ -8,6 +8,7 @@ import ListPageLayout from "../../../components/layout/list-page-layout";
 import { createOrtuColumns } from "../../../components/columns";
 import { Can } from "../../../components/auth";
 import { authClient } from "../../../lib/auth-client";
+import OrtuForm from "./ortu-form";
 
 export default function OrtuListPage() {
   const { data: session } = authClient.useSession();
@@ -26,6 +27,11 @@ export default function OrtuListPage() {
     setEditingId(id);
     setIsDialogOpen(true);
   };
+
+  const initialData = React.useMemo(() => {
+    if (!editingId || !ortuData?.data) return undefined;
+    return ortuData.data.find((item) => item.id === editingId);
+  }, [editingId, ortuData?.data]);
 
   const columns = React.useMemo(
     () =>
@@ -70,10 +76,14 @@ export default function OrtuListPage() {
                 maxWidth="md"
                 hideFooter
               >
-                {/* TODO: Add OrtuForm component */}
-                <div className="p-4 text-center text-muted-foreground">
-                  Form akan ditambahkan
-                </div>
+                <OrtuForm
+                  isDialog
+                  initialData={initialData}
+                  onCancel={() => setIsDialogOpen(false)}
+                  onSuccess={() => {
+                    setIsDialogOpen(false);
+                  }}
+                />
               </FormDialog>
             </>
           ) : null
@@ -82,9 +92,8 @@ export default function OrtuListPage() {
         <DataTable
           columns={columns}
           data={ortuData?.data || []}
-          searchKey="namaAyah"
           isLoading={isLoading}
-          searchPlaceholder="Cari nama ayah..."
+          searchPlaceholder="Cari nama ayah atau ibu"
         />
 
         <ConfirmDialog

@@ -89,7 +89,6 @@ export default function PengukuranListPage() {
           columns={columns}
           data={pengukuranData?.data || []}
           isLoading={isLoading}
-          searchKey="nama"
           searchPlaceholder="Cari nama anak..."
         />
 

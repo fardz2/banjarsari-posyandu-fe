@@ -3,14 +3,12 @@ import {
   UsersIcon,
   BuildingIcon,
   BabyIcon,
-  HeartIcon,
   RulerIcon,
   UserIcon,
 } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "../../../components/ui/card";
@@ -89,14 +87,7 @@ export default function DashboardHomePage() {
         "ORANG_TUA",
       ],
     },
-    {
-      title: "Ibu Hamil",
-      icon: HeartIcon,
-      value: summary?.ibuHamil || 0,
-      description: "Ibu hamil terdaftar",
-      href: "/dashboard/ibu-hamil",
-      roles: ["SUPER_ADMIN", "ADMIN", "TENAGA_KESEHATAN", "KADER_POSYANDU"],
-    },
+
     {
       title: "Pengukuran",
       icon: RulerIcon,
@@ -323,74 +314,6 @@ export default function DashboardHomePage() {
           </Can>
         </div>
       )}
-
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Aksi Cepat</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {user?.role !== "ORANG_TUA" && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Tambah Anak Baru</CardTitle>
-                  <CardDescription>Daftarkan anak baru</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link to="/dashboard/anak/new">
-                    <button className="text-sm text-primary hover:underline">
-                      Ke formulir →
-                    </button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Catat Pengukuran</CardTitle>
-                  <CardDescription>Tambah data pengukuran baru</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link to="/dashboard/pengukuran/new">
-                    <button className="text-sm text-primary hover:underline">
-                      Ke formulir →
-                    </button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Daftar Ibu Hamil</CardTitle>
-                  <CardDescription>Tambah ibu hamil baru</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link to="/dashboard/ibu-hamil/new">
-                    <button className="text-sm text-primary hover:underline">
-                      Ke formulir →
-                    </button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </>
-          )}
-
-          {user?.role === "ORANG_TUA" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Anak Saya</CardTitle>
-                <CardDescription>Lihat data anak Anda</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link to="/dashboard/anak">
-                  <button className="text-sm text-primary hover:underline">
-                    Lihat anak →
-                  </button>
-                </Link>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

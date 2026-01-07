@@ -25,6 +25,7 @@ export interface User {
   username: string | null;
   email: string;
   name: string;
+  jenisKelamin?: string | null;
   role: Role;
   posyanduId: number | null;
   posyandu?: {
@@ -40,12 +41,22 @@ export interface CreateUserInput {
   password: string;
   username: string;
   name: string;
+  jenisKelamin?: string;
   role?: Role;
   posyanduId?: number;
 }
 
+export interface UserFilterParams {
+  role?: string; // Comma-separated roles for multiselect
+  name?: string;
+  posyanduId?: string; // Comma-separated posyandu IDs for multiselect
+  unassignedOrtu?: boolean;
+  jenisKelamin?: string;
+}
+
 export interface UpdateUserInput {
   name?: string;
+  jenisKelamin?: string;
   username?: string;
   posyanduId?: number;
 }
@@ -262,6 +273,8 @@ export interface UpdateIbuHamilInput {
 export interface Ortu {
   id: number;
   userId: string | null;
+  userAyahId: string | null;
+  userIbuId: string | null;
   nik: string | null;
   namaAyah: string | null;
   namaIbu: string | null;
@@ -272,10 +285,18 @@ export interface Ortu {
   };
 }
 
-export interface UpdateOrtuInput {
+export interface CreateOrtuInput {
   nik?: string;
-  namaAyah?: string;
-  namaIbu?: string;
   alamat?: string;
   telepon?: string;
+  userAyahId?: string;
+  userIbuId?: string;
+}
+
+export interface UpdateOrtuInput {
+  nik?: string;
+  alamat?: string;
+  telepon?: string;
+  userAyahId?: string;
+  userIbuId?: string;
 }

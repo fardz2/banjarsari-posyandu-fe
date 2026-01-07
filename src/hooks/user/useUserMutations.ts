@@ -95,8 +95,10 @@ export const useCreateUser = () => {
       toast.error("Gagal membuat user");
     },
     
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+    onSettled: async () => {
+      // Invalidate and refetch to ensure fresh data in all user lists
+      await queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+      await queryClient.refetchQueries({ queryKey: queryKeys.user.lists() });
     },
     
     onSuccess: () => {
@@ -154,9 +156,11 @@ export const useUpdateUser = () => {
       toast.error("Gagal memperbarui user");
     },
     
-    onSettled: (_data, _error, { id }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.detail(id) });
+    onSettled: async (_data, _error, { id }) => {
+      // Invalidate and refetch to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: queryKeys.user.lists() });
+      await queryClient.refetchQueries({ queryKey: queryKeys.user.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.user.detail(id) });
     },
     
     onSuccess: () => {

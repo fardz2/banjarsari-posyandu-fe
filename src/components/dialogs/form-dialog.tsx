@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Loader2 } from "lucide-react";
+import { ScrollArea } from "../ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -71,7 +72,9 @@ export function FormDialog({
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="py-4">{children}</div>
+        <ScrollArea className="max-h-[80vh]">
+          <div className="py-4 px-1">{children}</div>
+        </ScrollArea>
         {!hideFooter && (
           <DialogFooter>
             <Button

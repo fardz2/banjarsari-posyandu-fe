@@ -58,7 +58,18 @@ export default function UsersListPage() {
   const canAssignRole = isSuperAdmin;
   const canCreateUser = isSuperAdmin || isAdmin || isKader; // Kader can create but limited to ORANG_TUA
 
-  const { data, isLoading } = useUsers({ limit: 100, ...filters });
+  const { data, isLoading } = useUsers({
+    limit: 100,
+    role:
+      filters.roles && filters.roles.length > 0
+        ? filters.roles.join(",")
+        : undefined,
+    posyanduId:
+      filters.posyanduIds && filters.posyanduIds.length > 0
+        ? filters.posyanduIds.join(",")
+        : undefined,
+  });
+  console.log(data);
   const { data: posyanduData } = usePosyandu(undefined, {
     enabled: isSuperAdmin,
   });
@@ -93,16 +104,17 @@ export default function UsersListPage() {
     setFilters({});
   };
 
-  const hasActiveFilters = filters.role || filters.posyanduId;
+  const hasActiveFilters =
+    (filters.roles && filters.roles.length > 0) ||
+    (filters.posyanduIds && filters.posyanduIds.length > 0);
 
   const getFilterBadgeText = () => {
     const badges: string[] = [];
-    if (filters.role) badges.push(filters.role);
-    if (filters.posyanduId) {
-      const posyandu = posyanduData?.data?.find(
-        (p) => String(p.id) === filters.posyanduId
-      );
-      if (posyandu) badges.push(posyandu.nama);
+    if (filters.roles && filters.roles.length > 0) {
+      badges.push(`${filters.roles.length} role`);
+    }
+    if (filters.posyanduIds && filters.posyanduIds.length > 0) {
+      badges.push(`${filters.posyanduIds.length} posyandu`);
     }
     return badges.join(", ");
   };
@@ -131,19 +143,6 @@ export default function UsersListPage() {
         description="Kelola akun pengguna dan izin akses"
         headerAction={
           <div className="flex items-center gap-2">
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="gap-1 pr-1">
-                <span className="text-xs">{getFilterBadgeText()}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-transparent"
-                  onClick={handleClearFilters}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            )}
             <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
               <FilterIcon className="h-4 w-4 mr-2" />
               Filter
@@ -177,9 +176,8 @@ export default function UsersListPage() {
         <DataTable
           columns={columns}
           data={data?.data || []}
-          searchKey="name"
           isLoading={isLoading}
-          searchPlaceholder="Cari user..."
+          searchPlaceholder="Cari Pengguna..."
         />
 
         {/* Delete Confirmation Dialog */}

@@ -13,7 +13,9 @@ export const anakSchema = z.object({
   bbLahir: z.number().optional(),
   tbLahir: z.number().optional(),
   posyanduId: z.number().min(1, "Pilih Posyandu"),
-  // ortuId intentionally omitted for now until Ortu selection is implemented
+  
+  // Ortu related fields
+  ortuId: z.number().optional(),
 });
 
 export type AnakFormValues = z.infer<typeof anakSchema>;

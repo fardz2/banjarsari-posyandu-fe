@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -9,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
+import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 
 export interface ConfirmDialogProps {
@@ -41,17 +41,27 @@ export function ConfirmDialog({
     try {
       setInternalLoading(true);
       await onConfirm();
+      // Only close dialog if mutation succeeds
       onOpenChange(false);
     } catch (error) {
       // Error handling is done by the parent component (e.g., toast)
       console.error("ConfirmDialog error:", error);
+      // Dialog stays open on error so user can retry or cancel
     } finally {
       setInternalLoading(false);
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    // Prevent closing dialog while loading
+    if (!newOpen && loading) {
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -59,21 +69,14 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              handleConfirm();
-            }}
+          <Button
+            onClick={handleConfirm}
             disabled={loading}
-            className={
-              variant === "destructive"
-                ? "bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                : ""
-            }
+            variant={variant === "destructive" ? "destructive" : "default"}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmText}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

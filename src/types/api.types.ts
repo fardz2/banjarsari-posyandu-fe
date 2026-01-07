@@ -50,16 +50,10 @@ export interface PaginationParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   status?: string; // For forum filtering
-  posyanduId?: string; // For forum filtering
+  posyanduId?: string | number; // For forum filtering
 }
 
-/**
- * User Filter Parameters
- */
-export interface UserFilterParams {
-  role?: string;
-  posyanduId?: string;
-}
+
 
 /**
  * Generic List Response (without pagination)

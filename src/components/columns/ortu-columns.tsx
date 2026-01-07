@@ -16,11 +16,6 @@ export const createOrtuColumns = ({
 }: CreateOrtuColumnsOptions): ColumnDef<Ortu>[] => {
   const columns: ColumnDef<Ortu>[] = [
     {
-      accessorKey: "nik",
-      header: "NIK",
-      cell: ({ row }) => row.original.nik || "-",
-    },
-    {
       accessorKey: "namaAyah",
       header: "Nama Ayah",
       cell: ({ row }) => row.original.namaAyah || "-",
@@ -29,16 +24,6 @@ export const createOrtuColumns = ({
       accessorKey: "namaIbu",
       header: "Nama Ibu",
       cell: ({ row }) => row.original.namaIbu || "-",
-    },
-    {
-      accessorKey: "alamat",
-      header: "Alamat",
-      cell: ({ row }) => row.original.alamat || "-",
-    },
-    {
-      accessorKey: "telepon",
-      header: "Telepon",
-      cell: ({ row }) => row.original.telepon || "-",
     },
   ];
 

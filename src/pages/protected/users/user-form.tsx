@@ -39,6 +39,7 @@ const userSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   username: z.string().min(3, "Username minimal 3 karakter"),
   email: z.string().email("Email tidak valid"),
+  jenisKelamin: z.enum(["Laki-laki", "Perempuan"]).optional(),
   role: z.enum([
     "SUPER_ADMIN",
     "ADMIN",
@@ -74,6 +75,8 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
       name: user?.name || "",
       username: user?.username || "",
       email: user?.email || "",
+      jenisKelamin:
+        (user?.jenisKelamin as "Laki-laki" | "Perempuan") || undefined,
       role: user?.role || "ORANG_TUA",
       posyanduId: user?.posyanduId?.toString() || "",
       password: "",
@@ -86,6 +89,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
 
   const watchedRole = form.watch("role");
   const needsPosyandu = ["KADER_POSYANDU", "ORANG_TUA"].includes(watchedRole);
+  const needsGender = watchedRole === "ORANG_TUA";
 
   const onSubmit = async (data: UserFormValues) => {
     try {
@@ -93,6 +97,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
         name: data.name,
         username: data.username,
         email: data.email,
+        jenisKelamin: data.jenisKelamin,
         role: data.role,
         posyanduId: data.posyanduId ? parseInt(data.posyanduId) : undefined,
       };
@@ -113,6 +118,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
           id: user.id,
           data: {
             name: data.name,
+            jenisKelamin: data.jenisKelamin,
             username: data.username,
             posyanduId: payload.posyanduId,
           },
@@ -168,6 +174,32 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
               </Field>
             )}
           />
+
+          {needsGender && (
+            <Controller
+              control={form.control}
+              name="jenisKelamin"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Jenis Kelamin</FieldLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Jenis Kelamin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                      <SelectItem value="Perempuan">Perempuan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+          )}
 
           {!isEditing && (
             <Controller

@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import { queryKeys } from "../../lib/react-query";
 import { 
   updateCurrentOrtu,
+  createOrtu,
   updateOrtu, 
   deleteOrtu 
 } from "../../services";
-import type { UpdateOrtuInput, Ortu } from "../../types";
+import type { CreateOrtuInput, UpdateOrtuInput, Ortu } from "../../types";
 
 /**
  * Hook untuk update current ortu profile
@@ -51,6 +52,29 @@ export const useUpdateCurrentOrtu = () => {
     
     onSuccess: () => {
       toast.success("Profile orang tua berhasil diperbarui");
+    },
+  });
+};
+
+/**
+ * Hook untuk create ortu
+ * POST /api/v1/ortu
+ */
+export const useCreateOrtu = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateOrtuInput) => createOrtu(data),
+    
+    onSuccess: async () => {
+      // Invalidate and refetch to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ortu.lists() });
+      await queryClient.refetchQueries({ queryKey: queryKeys.ortu.lists() });
+      toast.success("Data orang tua berhasil ditambahkan");
+    },
+    
+    onError: () => {
+      toast.error("Gagal menambahkan data orang tua");
     },
   });
 };

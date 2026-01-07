@@ -6,6 +6,7 @@
 import api from "../lib/axios";
 import type { 
   Ortu, 
+  CreateOrtuInput,
   UpdateOrtuInput,
   ApiResponse, 
   PaginatedResponse, 
@@ -47,6 +48,17 @@ export const getAllOrtu = async (
   params?: PaginationParams
 ): Promise<PaginatedResponse<Ortu>> => {
   return await api.get<PaginatedResponse<Ortu>>("/ortu", { params });
+};
+
+/**
+ * Create ortu
+ * POST /api/v1/ortu
+ * Roles: SUPER_ADMIN, ADMIN, TENAGA_KESEHATAN, KADER_POSYANDU
+ */
+export const createOrtu = async (
+  data: CreateOrtuInput
+): Promise<ApiResponse<Ortu>> => {
+  return await api.post<ApiResponse<Ortu>>("/ortu", data);
 };
 
 /**

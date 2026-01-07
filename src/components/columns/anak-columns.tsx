@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { EditIcon, TrashIcon, EyeIcon } from "lucide-react";
+import { EditIcon, TrashIcon, EyeIcon, ActivityIcon } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Anak } from "../../types";
 import { Button } from "../ui/button";
@@ -7,12 +7,14 @@ import { Button } from "../ui/button";
 interface AnakColumnsProps {
   onEdit?: (nik: string) => void;
   onDelete?: (nik: string) => void;
+  onQuickInput?: (anak: Anak) => void;
   hideManagement?: boolean;
 }
 
 export const createAnakColumns = ({
   onEdit,
   onDelete,
+  onQuickInput,
   hideManagement,
 }: AnakColumnsProps): ColumnDef<Anak>[] => [
   {
@@ -31,14 +33,18 @@ export const createAnakColumns = ({
   },
   {
     accessorKey: "jenisKelamin",
-    header: "L/P",
+    header: "Jenis Kelamin",
     cell: ({ row }) => (
-      <div>{row.getValue("jenisKelamin") === "Laki-laki" ? "L" : "P"}</div>
+      <div>
+        {row.getValue("jenisKelamin") === "Laki-laki"
+          ? "Laki-laki"
+          : "Perempuan"}
+      </div>
     ),
   },
   {
     accessorKey: "tglLahir",
-    header: "Tgl Lahir",
+    header: "Tanggal Lahir",
     cell: ({ row }) => {
       const date = new Date(row.getValue("tglLahir"));
       return <div>{date.toLocaleDateString("id-ID")}</div>;
@@ -73,6 +79,17 @@ export const createAnakColumns = ({
       const anak = row.original;
       return (
         <div className="flex items-center justify-end gap-2">
+          {onQuickInput && !hideManagement && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onQuickInput(anak)}
+              className="gap-1"
+            >
+              <ActivityIcon className="h-3.5 w-3.5" />
+              Ukur
+            </Button>
+          )}
           <Button variant="ghost" size="icon" asChild>
             <Link to={`/dashboard/anak/${anak.nik}`}>
               <EyeIcon className="h-4 w-4" />

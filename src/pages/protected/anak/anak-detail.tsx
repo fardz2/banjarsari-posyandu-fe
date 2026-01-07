@@ -1,7 +1,6 @@
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router";
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { ArrowLeftIcon } from "lucide-react";
 import { useAnakDetail } from "../../../hooks/anak/useAnak";
 import { Button } from "../../../components/ui/button";
 import {
@@ -10,23 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../../components/ui/table";
-import { Badge } from "../../../components/ui/badge";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyMedia,
-} from "../../../components/ui/empty";
-import { FileX } from "lucide-react";
 import { DetailSkeleton } from "../../../components/skeletons/detail-skeleton";
 import {
   Tabs,
@@ -37,65 +19,41 @@ import {
 import { usePengukuranByAnakNik } from "../../../hooks/anak/usePengukuran";
 import { GrowthChart } from "../../../components/charts/growth-chart";
 import { authClient } from "../../../lib/auth-client";
-
-// Helper component for status badges
-function StatusBadge({ status }: { status: string | null }) {
-  if (!status) return <span className="text-muted-foreground">-</span>;
-
-  const getVariant = (
-    status: string
-  ): "default" | "destructive" | "secondary" => {
-    const statusLower = status.toLowerCase();
-    if (
-      statusLower.includes("buruk") ||
-      statusLower.includes("sangat pendek") ||
-      statusLower.includes("sangat kurus")
-    ) {
-      return "destructive";
-    }
-    if (
-      statusLower.includes("kurang") ||
-      statusLower.includes("pendek") ||
-      statusLower.includes("kurus")
-    ) {
-      return "secondary";
-    }
-    return "default";
-  };
-
-  return (
-    <Badge variant={getVariant(status)} className="whitespace-nowrap">
-      {status}
-    </Badge>
-  );
-}
-
-// Helper component for Naik BB badge
-function NaikBBBadge({ status }: { status: string | null }) {
-  if (!status) return <span className="text-muted-foreground">-</span>;
-
-  const variant = status.toLowerCase().includes("naik")
-    ? "default"
-    : "secondary";
-
-  return (
-    <Badge variant={variant} className="whitespace-nowrap">
-      {status}
-    </Badge>
-  );
-}
+import { EditPengukuranDialog } from "../../../components/dialogs";
+import { DataTable } from "../../../components/ui/data-table";
+import { createPengukuranDetailColumns } from "../../../components/columns";
+import type { Pengukuran } from "../../../types";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 export default function AnakDetail() {
   const { data: session } = authClient.useSession();
   const user = session?.user as any;
   const isOrtu = user?.role === "ORANG_TUA";
+  const isTenagaKesehatan = user?.role === "TENAGA_KESEHATAN";
 
   const { nik } = useParams<{ nik: string }>();
   const { data: response, isLoading } = useAnakDetail(nik || "");
-  const { data: pengukuranResponse } = usePengukuranByAnakNik(nik || "");
+  const { data: pengukuranResponse, isLoading: isLoadingPengukuran } =
+    usePengukuranByAnakNik(nik || "");
 
   const anak = response?.data;
   const pengukuranList = pengukuranResponse?.data || [];
+
+  // State for edit dialog
+  const [editingPengukuran, setEditingPengukuran] = useState<Pengukuran | null>(
+    null
+  );
+
+  // Create columns for pengukuran table
+  const pengukuranColumns = useMemo(
+    () =>
+      createPengukuranDetailColumns({
+        onEdit: isOrtu ? undefined : setEditingPengukuran,
+        hideActions: isOrtu || isTenagaKesehatan,
+      }),
+    [isOrtu, isTenagaKesehatan]
+  );
 
   // Transform data for charts
   const chartData = pengukuranList
@@ -117,7 +75,7 @@ export default function AnakDetail() {
     })
     .sort((a, b) => a.age - b.age);
 
-  if (isLoading) {
+  if (isLoading || isLoadingPengukuran) {
     return <DetailSkeleton />;
   }
 
@@ -145,16 +103,6 @@ export default function AnakDetail() {
               {anak.jenisKelamin === "Laki-laki" ? "Laki-laki" : "Perempuan"}
             </span>
           </div>
-        </div>
-        <div className="flex gap-2">
-          {!isOrtu && (
-            <Button variant="outline" asChild>
-              <Link to="/dashboard/anak">
-                <PencilIcon className="mr-2 h-4 w-4" />
-                Edit Data
-              </Link>
-            </Button>
-          )}
         </div>
       </div>
 
@@ -223,76 +171,20 @@ export default function AnakDetail() {
               <CardTitle>Riwayat Pengukuran</CardTitle>
             </CardHeader>
             <CardContent>
-              {pengukuranList.length === 0 ? (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <FileX />
-                    </EmptyMedia>
-                    <EmptyTitle>Belum Ada Data Pengukuran</EmptyTitle>
-                    <EmptyDescription>
-                      Belum ada riwayat pengukuran untuk anak ini.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tanggal</TableHead>
-                      <TableHead>Usia</TableHead>
-                      <TableHead>BB (kg)</TableHead>
-                      <TableHead>TB (cm)</TableHead>
-                      <TableHead>LILA (cm)</TableHead>
-                      <TableHead>LK (cm)</TableHead>
-                      <TableHead>Status BB/U</TableHead>
-                      <TableHead>Status TB/U</TableHead>
-                      <TableHead>Status BB/TB</TableHead>
-                      <TableHead>Status LK/U</TableHead>
-                      <TableHead>Naik BB</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pengukuranList
-                      .sort(
-                        (a, b) =>
-                          new Date(b.tglUkur).getTime() -
-                          new Date(a.tglUkur).getTime()
-                      )
-                      .map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell>
-                            {format(new Date(p.tglUkur), "d MMM yyyy", {
-                              locale: id,
-                            })}
-                          </TableCell>
-                          <TableCell>{p.usiaSaatUkur || "-"}</TableCell>
-                          <TableCell>{p.berat}</TableCell>
-                          <TableCell>{p.tinggi}</TableCell>
-                          <TableCell>{p.lila || "-"}</TableCell>
-                          <TableCell>{p.lingkarKepala || "-"}</TableCell>
-                          <TableCell>
-                            <StatusBadge status={p.status_bb_u} />
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={p.status_tb_u} />
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={p.status_bb_tb} />
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={p.status_lk_u} />
-                          </TableCell>
-                          <TableCell>
-                            <NaikBBBadge status={p.naikBeratBadan} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              )}
+              <DataTable
+                columns={pengukuranColumns}
+                data={pengukuranList}
+                searchPlaceholder="Cari riwayat pengukuran..."
+              />
             </CardContent>
           </Card>
+
+          {/* Edit Pengukuran Dialog */}
+          <EditPengukuranDialog
+            open={!!editingPengukuran}
+            onOpenChange={(open) => !open && setEditingPengukuran(null)}
+            pengukuran={editingPengukuran}
+          />
         </TabsContent>
 
         <TabsContent value="growth" className="space-y-8">

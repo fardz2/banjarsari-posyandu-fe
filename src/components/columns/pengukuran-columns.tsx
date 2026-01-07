@@ -2,11 +2,44 @@ import { EditIcon, TrashIcon } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Pengukuran } from "../../types";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
 interface PengukuranColumnsProps {
   onEdit?: (pengukuran: Pengukuran) => void;
   onDelete?: (id: number) => void;
 }
+
+// Helper function for status badge variant
+const getStatusBadgeVariant = (
+  status: string | null
+): "default" | "destructive" | "secondary" => {
+  if (!status) return "secondary";
+
+  const statusLower = status.toLowerCase();
+  if (
+    statusLower.includes("buruk") ||
+    statusLower.includes("sangat pendek") ||
+    statusLower.includes("sangat kurus")
+  ) {
+    return "destructive";
+  }
+  if (
+    statusLower.includes("kurang") ||
+    statusLower.includes("pendek") ||
+    statusLower.includes("kurus")
+  ) {
+    return "secondary";
+  }
+  return "default";
+};
+
+// Helper function for Naik BB badge variant
+const getNaikBBBadgeVariant = (
+  status: string | null
+): "default" | "secondary" => {
+  if (!status) return "secondary";
+  return status.toLowerCase().includes("naik") ? "default" : "secondary";
+};
 
 export const createPengukuranColumns = ({
   onEdit,
@@ -72,7 +105,15 @@ export const createPengukuranColumns = ({
     header: "Status BB/U",
     cell: ({ row }) => {
       const status = row.getValue("status_bb_u") as string | null;
-      return <div className="text-xs">{status || "-"}</div>;
+      if (!status) return <span className="text-muted-foreground">-</span>;
+      return (
+        <Badge
+          variant={getStatusBadgeVariant(status)}
+          className="whitespace-nowrap"
+        >
+          {status}
+        </Badge>
+      );
     },
   },
   {
@@ -80,7 +121,15 @@ export const createPengukuranColumns = ({
     header: "Status TB/U",
     cell: ({ row }) => {
       const status = row.getValue("status_tb_u") as string | null;
-      return <div className="text-xs">{status || "-"}</div>;
+      if (!status) return <span className="text-muted-foreground">-</span>;
+      return (
+        <Badge
+          variant={getStatusBadgeVariant(status)}
+          className="whitespace-nowrap"
+        >
+          {status}
+        </Badge>
+      );
     },
   },
   {
@@ -88,7 +137,15 @@ export const createPengukuranColumns = ({
     header: "Status BB/TB",
     cell: ({ row }) => {
       const status = row.getValue("status_bb_tb") as string | null;
-      return <div className="text-xs">{status || "-"}</div>;
+      if (!status) return <span className="text-muted-foreground">-</span>;
+      return (
+        <Badge
+          variant={getStatusBadgeVariant(status)}
+          className="whitespace-nowrap"
+        >
+          {status}
+        </Badge>
+      );
     },
   },
   {
@@ -96,7 +153,15 @@ export const createPengukuranColumns = ({
     header: "Status LK/U",
     cell: ({ row }) => {
       const status = row.getValue("status_lk_u") as string | null;
-      return <div className="text-xs">{status || "-"}</div>;
+      if (!status) return <span className="text-muted-foreground">-</span>;
+      return (
+        <Badge
+          variant={getStatusBadgeVariant(status)}
+          className="whitespace-nowrap"
+        >
+          {status}
+        </Badge>
+      );
     },
   },
   {
@@ -104,7 +169,15 @@ export const createPengukuranColumns = ({
     header: "Naik BB",
     cell: ({ row }) => {
       const status = row.getValue("naikBeratBadan") as string | null;
-      return <div className="text-xs">{status || "-"}</div>;
+      if (!status) return <span className="text-muted-foreground">-</span>;
+      return (
+        <Badge
+          variant={getNaikBBBadgeVariant(status)}
+          className="whitespace-nowrap"
+        >
+          {status}
+        </Badge>
+      );
     },
   },
   {

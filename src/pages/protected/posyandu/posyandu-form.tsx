@@ -11,6 +11,7 @@ import {
   FieldLabel,
 } from "../../../components/ui/field";
 import { Input } from "../../../components/ui/input";
+import { FormSkeleton } from "../../../components/skeletons/form-skeleton";
 import {
   usePosyanduDetail,
   useCreatePosyandu,
@@ -84,8 +85,12 @@ export default function PosyanduForm({
     }
   };
 
-  const isLoading =
-    createMutation.isPending || updateMutation.isPending || isLoadingDetail;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  // Show skeleton while loading data for edit mode
+  if (isEdit && isLoadingDetail) {
+    return <FormSkeleton fieldCount={5} />;
+  }
 
   return (
     <div className="space-y-6">
