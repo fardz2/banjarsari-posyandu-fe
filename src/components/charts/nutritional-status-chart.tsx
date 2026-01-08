@@ -12,7 +12,6 @@ import {
   Cell,
   Pie,
   PieChart,
-  ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
