@@ -121,6 +121,7 @@ export function NutritionalStatusByPosyanduChart({
                     <ChartLegend
                       content={<ChartLegendContent />}
                       wrapperStyle={{ fontSize: "12px" }}
+                      className="flex flex-wrap"
                     />
                     {currentKeys.map((status) => (
                       <Bar

@@ -139,7 +139,7 @@ export function NutritionalStatusChart({
 
   return (
     <Card
-      className={`col-span-full sm:col-span-2 lg:col-span-1 ${
+      className={`col-span-2 lg:col-span-1 flex flex-col"${
         isCircularChart ? "flex flex-col" : ""
       }`}
     >
