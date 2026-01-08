@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "../../../components/ui/button";
 import {
@@ -86,25 +87,26 @@ export default function AnakForm({
   }, [anakData, form]);
 
   const onSubmit = async (values: AnakFormValues) => {
-    try {
-      const payload = {
-        ...values,
-      };
+    const payload = { ...values };
 
-      if (isEdit && nik) {
-        await updateMutation.mutateAsync({
-          nik: nik,
-          data: payload,
-        });
-        toast.success("Data anak berhasil diperbarui");
-      } else {
-        await createMutation.mutateAsync(payload);
-        toast.success("Data anak berhasil ditambahkan");
-      }
+    const promise =
+      isEdit && nik
+        ? updateMutation.mutateAsync({ nik, data: payload })
+        : createMutation.mutateAsync(payload);
+
+    toast.promise(promise, {
+      loading: isEdit ? "Memperbarui data anak..." : "Menambahkan data anak...",
+      success: isEdit
+        ? "Data anak berhasil diperbarui!"
+        : "Data anak berhasil ditambahkan!",
+      error: (err) => err?.message || "Gagal menyimpan data anak",
+    });
+
+    try {
+      await promise;
       onSuccess?.();
     } catch (error) {
-      console.error(error);
-      toast.error("Gagal menyimpan data anak");
+      // Error handled by toast.promise
     }
   };
 
@@ -293,7 +295,8 @@ export default function AnakForm({
 
         <div className="flex justify-end gap-4 pt-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Menyimpan..." : "Simpan"}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Simpan Perubahan" : "Tambah Data"}
           </Button>
         </div>
       </form>

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "../../../components/ui/button";
 import {
@@ -67,21 +68,26 @@ export default function PosyanduForm({
   }, [posyanduData, form]);
 
   const onSubmit = async (values: PosyanduFormValues) => {
+    const promise =
+      isEdit && posyanduId
+        ? updateMutation.mutateAsync({ id: posyanduId, data: values })
+        : createMutation.mutateAsync(values);
+
+    toast.promise(promise, {
+      loading: isEdit
+        ? "Memperbarui data posyandu..."
+        : "Menambahkan data posyandu...",
+      success: isEdit
+        ? "Posyandu berhasil diperbarui!"
+        : "Posyandu berhasil ditambahkan!",
+      error: (err) => err?.message || "Gagal menyimpan data posyandu",
+    });
+
     try {
-      if (isEdit && posyanduId) {
-        await updateMutation.mutateAsync({
-          id: posyanduId,
-          data: values,
-        });
-        toast.success("Posyandu berhasil diperbarui");
-      } else {
-        await createMutation.mutateAsync(values);
-        toast.success("Posyandu berhasil ditambahkan");
-      }
+      await promise;
       onSuccess?.();
     } catch (error) {
-      console.error(error);
-      toast.error("Gagal menyimpan data posyandu");
+      // Error handled by toast.promise
     }
   };
 
@@ -163,7 +169,8 @@ export default function PosyanduForm({
 
         <div className="flex justify-end gap-4 pt-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Menyimpan..." : "Simpan"}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Simpan Perubahan" : "Tambah Posyandu"}
           </Button>
         </div>
       </form>

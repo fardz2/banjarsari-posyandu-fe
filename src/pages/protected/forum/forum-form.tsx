@@ -2,6 +2,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -13,7 +14,7 @@ import {
 } from "../../../components/ui/field";
 import { cn } from "../../../lib/utils";
 
-import type { Forum, CreateForumInput } from "../../../types";
+import type { Forum } from "../../../types";
 import { useCreateForum, useUpdateForum } from "../../../hooks";
 
 const forumSchema = z.object({
@@ -44,27 +45,30 @@ export function ForumForm({ initialData, onSuccess }: ForumFormProps) {
   });
 
   const onSubmit = async (values: ForumFormValues) => {
+    const promise =
+      isEditing && initialData
+        ? updateMutation.mutateAsync({
+            id: initialData.id,
+            data: values,
+          })
+        : createMutation.mutateAsync({
+            title: values.title,
+            content: values.content,
+          });
+
+    toast.promise(promise, {
+      loading: isEditing ? "Menyimpan perubahan..." : "Mengirim pertanyaan...",
+      success: isEditing
+        ? "Pertanyaan berhasil diperbarui!"
+        : "Pertanyaan berhasil dikirim!",
+      error: (err) => err?.message || "Gagal menyimpan. Silakan coba lagi.",
+    });
+
     try {
-      if (isEditing && initialData) {
-        // Update logic
-        await updateMutation.mutateAsync({
-          id: initialData.id,
-          data: values,
-        });
-      } else {
-        // Create logic
-        // We manually construct input including file if present.
-        // Note: The hook expects CreateForumInput, but we might eventually need to pass FormData.
-        // For now, assume hook handles it or we pass object.
-        const input: CreateForumInput = {
-          title: values.title,
-          content: values.content,
-        };
-        await createMutation.mutateAsync(input);
-      }
+      await promise;
       onSuccess?.();
     } catch (error) {
-      console.error(error);
+      // Error handled by toast.promise
     }
   };
 

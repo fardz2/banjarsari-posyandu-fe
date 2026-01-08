@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "../../../components/ui/button";
 import {
@@ -120,35 +121,36 @@ export default function OrtuForm({
   }, [initialData, form]);
 
   const onSubmit = async (values: OrtuFormValues) => {
+    const payload: any = { ...values };
+
+    if (values.userAyahId === "none" || !values.userAyahId) {
+      delete payload.userAyahId;
+    }
+    if (values.userIbuId === "none" || !values.userIbuId) {
+      delete payload.userIbuId;
+    }
+
+    const promise =
+      isEdit && initialData
+        ? updateMutation.mutateAsync({ id: initialData.id, data: payload })
+        : createMutation.mutateAsync(payload);
+
+    toast.promise(promise, {
+      loading: isEdit
+        ? "Memperbarui data orang tua..."
+        : "Menambahkan data orang tua...",
+      success: isEdit
+        ? "Data orang tua berhasil diperbarui!"
+        : "Data orang tua berhasil ditambahkan!",
+      error: (err) => err?.message || "Gagal menyimpan data orang tua",
+    });
+
     try {
-      // Clean up values
-      const payload: any = { ...values };
-
-      // Handle "none" selection by removing key or setting to null?
-      // Type is string | undefined. Backend expects optional string.
-      if (values.userAyahId === "none" || !values.userAyahId) {
-        delete payload.userAyahId;
-      }
-      if (values.userIbuId === "none" || !values.userIbuId) {
-        delete payload.userIbuId;
-      }
-
-      let result;
-      if (isEdit && initialData) {
-        await updateMutation.mutateAsync({
-          id: initialData.id,
-          data: payload,
-        });
-        toast.success("Data orang tua berhasil diperbarui");
-      } else {
-        const response = await createMutation.mutateAsync(payload);
-        result = response?.data;
-        toast.success("Data orang tua berhasil ditambahkan");
-      }
+      const response = await promise;
+      const result = isEdit ? undefined : response?.data;
       onSuccess?.(result);
     } catch (error) {
-      console.error(error);
-      // Toast handled by mutation
+      // Error handled by toast.promise
     }
   };
 
@@ -257,7 +259,8 @@ export default function OrtuForm({
             Batal
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Menyimpan..." : "Simpan"}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Simpan Perubahan" : "Tambah Data"}
           </Button>
         </DialogFooter>
       ) : (
@@ -268,7 +271,8 @@ export default function OrtuForm({
             </Button>
           )}
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Menyimpan..." : "Simpan"}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Simpan Perubahan" : "Tambah Data"}
           </Button>
         </div>
       )}

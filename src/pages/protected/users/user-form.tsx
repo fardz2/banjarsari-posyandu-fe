@@ -4,6 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { PasswordInput } from "../../../components/ui/password-input";
@@ -93,29 +94,27 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
   const needsGender = watchedRole === "ORANG_TUA";
 
   const onSubmit = async (data: UserFormValues) => {
-    try {
-      const payload: any = {
-        name: data.name,
-        username: data.username,
-        email: data.email,
-        jenisKelamin: data.jenisKelamin,
-        role: data.role,
-        posyanduId: data.posyanduId ? parseInt(data.posyanduId) : undefined,
-      };
+    const payload: any = {
+      name: data.name,
+      username: data.username,
+      email: data.email,
+      jenisKelamin: data.jenisKelamin,
+      role: data.role,
+      posyanduId: data.posyanduId ? parseInt(data.posyanduId) : undefined,
+    };
 
-      if (!isEditing) {
-        // Create mode: Password required
-        if (!data.password) {
-          form.setError("password", {
-            message: "Password wajib diisi untuk user baru",
-          });
-          return;
-        }
-        payload.password = data.password;
-        await createUserMutation.mutateAsync(payload);
-      } else {
-        // Edit mode
-        await updateUserMutation.mutateAsync({
+    if (!isEditing) {
+      if (!data.password) {
+        form.setError("password", {
+          message: "Password wajib diisi untuk user baru",
+        });
+        return;
+      }
+      payload.password = data.password;
+    }
+
+    const promise = isEditing
+      ? updateUserMutation.mutateAsync({
           id: user.id,
           data: {
             name: data.name,
@@ -123,13 +122,22 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
             username: data.username,
             posyanduId: payload.posyanduId,
           },
-        });
-      }
+        })
+      : createUserMutation.mutateAsync(payload);
 
+    toast.promise(promise, {
+      loading: isEditing ? "Memperbarui user..." : "Membuat user baru...",
+      success: isEditing
+        ? "User berhasil diperbarui!"
+        : "User berhasil dibuat!",
+      error: (err) => err?.message || "Gagal menyimpan user",
+    });
+
+    try {
+      await promise;
       onSuccess();
     } catch (error) {
-      console.error(error);
-      toast.error("Gagal menyimpan user");
+      // Error handled by toast.promise
     }
   };
 
@@ -289,11 +297,8 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
             Batal
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading
-              ? "Menyimpan..."
-              : isEditing
-              ? "Simpan Perubahan"
-              : "Buat User"}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? "Simpan Perubahan" : "Buat User"}
           </Button>
         </div>
       </form>

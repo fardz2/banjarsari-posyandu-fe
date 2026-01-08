@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -81,9 +83,8 @@ export default function PengukuranForm({
   }, [pengukuran, form]);
 
   const onSubmit = async (data: CreatePengukuranFormValues) => {
-    try {
-      if (isEditing) {
-        await updateMutation.mutateAsync({
+    const promise = isEditing
+      ? updateMutation.mutateAsync({
           id: pengukuran.id,
           data: {
             tglUkur: data.tglUkur,
@@ -92,14 +93,25 @@ export default function PengukuranForm({
             lila: data.lila,
             lingkarKepala: data.lingkarKepala,
           },
-        });
-      } else {
-        await createMutation.mutateAsync(data);
-      }
+        })
+      : createMutation.mutateAsync(data);
+
+    toast.promise(promise, {
+      loading: isEditing
+        ? "Memperbarui data pengukuran..."
+        : "Menambahkan data pengukuran...",
+      success: isEditing
+        ? "Data pengukuran berhasil diperbarui!"
+        : "Data pengukuran berhasil ditambahkan!",
+      error: (err) => err?.message || "Gagal menyimpan data pengukuran",
+    });
+
+    try {
+      await promise;
       onOpenChange(false);
       form.reset();
     } catch (error) {
-      console.error("Error saving pengukuran:", error);
+      // Error handled by toast.promise
     }
   };
 
@@ -285,11 +297,10 @@ export default function PengukuranForm({
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Menyimpan..."
-                  : isEditing
-                  ? "Perbarui"
-                  : "Simpan"}
+                {(createMutation.isPending || updateMutation.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {isEditing ? "Perbarui Data" : "Simpan Data"}
               </Button>
             </DialogFooter>
           </form>
