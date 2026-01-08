@@ -269,7 +269,7 @@ export default function DashboardHomePage() {
               data={bbUData}
               title="Status Berat Badan (BB/U)"
               description="Distribusi berat badan menurut umur"
-              chartType="horizontal-bar"
+              chartType="vertical-bar"
               showLegend={false}
             />
           )}
@@ -295,7 +295,7 @@ export default function DashboardHomePage() {
               data={lkUData}
               title="Status Lingkar Kepala (LK/U)"
               description="Distribusi lingkar kepala menurut umur"
-              chartType="horizontal-bar"
+              chartType="vertical-bar"
               showLegend={false}
             />
           )}

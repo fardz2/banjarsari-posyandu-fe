@@ -12,6 +12,7 @@ import {
   Cell,
   Pie,
   PieChart,
+  ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
@@ -53,14 +54,14 @@ export function NutritionalStatusChart({
               data={data}
               dataKey="count"
               nameKey="status"
-              innerRadius={chartType === "donut" ? 60 : 0}
-              outerRadius={90}
+              innerRadius={chartType === "donut" ? "40%" : 0}
+              outerRadius="80%"
               paddingAngle={2}
             />
             {showLegend && (
               <ChartLegend
                 content={<ChartLegendContent nameKey="status" />}
-                className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center text-xs sm:text-sm"
+                className="-translate-y-2 flex-wrap gap-1 sm:gap-2 [&>*]:basis-full sm:[&>*]:basis-1/2 md:[&>*]:basis-1/3 lg:[&>*]:basis-1/4 [&>*]:justify-center text-xs"
               />
             )}
           </PieChart>
@@ -72,16 +73,18 @@ export function NutritionalStatusChart({
             accessibilityLayer
             data={data}
             layout="vertical"
-            margin={{ left: 0, right: 10 }}
+            margin={{ left: 10, right: 20, top: 5, bottom: 5 }}
           >
             <YAxis
               dataKey="status"
               type="category"
               tickLine={false}
-              tickMargin={10}
+              tickMargin={8}
               axisLine={false}
               width={80}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 10 }}
+              className="sm:text-xs md:text-sm"
+              interval={0}
             />
             <XAxis dataKey="count" type="number" hide />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
@@ -98,17 +101,23 @@ export function NutritionalStatusChart({
 
       case "vertical-bar":
         return (
-          <BarChart accessibilityLayer data={data}>
+          <BarChart
+            accessibilityLayer
+            data={data}
+            margin={{ left: 10, right: 10, top: 5, bottom: 20 }}
+          >
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="status"
               tickLine={false}
-              tickMargin={10}
+              tickMargin={8}
               axisLine={false}
-              tick={{ fontSize: 11 }}
-              tickFormatter={(value) =>
-                value.length > 5 ? value.substring(0, 5) + "." : value
-              }
+              tick={{ fontSize: 10 }}
+              className="sm:text-xs md:text-sm"
+              interval={0}
+              angle={-45}
+              textAnchor="end"
+              height={60}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Bar dataKey="count" radius={5}>
@@ -131,21 +140,33 @@ export function NutritionalStatusChart({
 
   return (
     <Card
-      className={`col-span-2 lg:col-span-1 ${
+      className={`col-span-full sm:col-span-2 lg:col-span-1 ${
         isCircularChart ? "flex flex-col" : ""
       }`}
     >
-      <CardHeader className={isCircularChart ? "items-center pb-0" : ""}>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+      <CardHeader
+        className={
+          isCircularChart ? "items-center pb-2 sm:pb-4" : "pb-2 sm:pb-4"
+        }
+      >
+        <CardTitle className="text-base sm:text-lg md:text-xl">
+          {title}
+        </CardTitle>
+        {description && (
+          <CardDescription className="text-xs sm:text-sm">
+            {description}
+          </CardDescription>
+        )}
       </CardHeader>
-      <CardContent className={isCircularChart ? "flex-1 pb-0" : ""}>
+      <CardContent
+        className={isCircularChart ? "flex-1 pb-2 sm:pb-4" : "pb-2 sm:pb-4"}
+      >
         <ChartContainer
           config={nutritionChartConfig}
           className={
             isCircularChart
-              ? "mx-auto aspect-square h-[250px] sm:h-[280px] md:max-h-[300px]"
-              : "h-[200px] sm:h-[250px] md:h-[300px] w-full"
+              ? "mx-auto aspect-square w-full max-w-[250px] sm:max-w-[280px] md:max-w-[320px] lg:max-w-[350px]"
+              : "h-[220px] sm:h-[260px] md:h-[300px] lg:h-[340px] w-full"
           }
         >
           {renderChart() || <></>}
