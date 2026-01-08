@@ -51,6 +51,7 @@ import {
 } from "../../ui/alert-dialog";
 
 import type { Role } from "../../../types";
+import { cn } from "@/lib/utils";
 
 const navigationItems = [
   {
@@ -171,11 +172,19 @@ function DashboardLayoutContent() {
       <Sidebar variant="floating" collapsible="icon">
         <SidebarHeader>
           <div
-            className={`flex items-center gap-2 px-4 py-2 ${
-              isCollapsed ? "justify-center" : ""
-            }`}
+            className={cn(
+              "flex items-center gap-2 py-2 transition-all",
+              isCollapsed ? "justify-center px-2" : "px-4"
+            )}
           >
-            <Building className="h-6 w-6 shrink-0" />
+            <img
+              src="/images/banjarsari.png"
+              alt="KMS Banjarsari Logo"
+              className={cn(
+                "transition-all",
+                isCollapsed ? "h-5 w-4" : "h-10 w-10"
+              )}
+            />
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
                 <span className="font-semibold truncate">KMS Banjarsari</span>
@@ -183,7 +192,6 @@ function DashboardLayoutContent() {
             )}
           </div>
         </SidebarHeader>
-
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
@@ -217,18 +225,27 @@ function DashboardLayoutContent() {
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    className={cn(
+                      "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
+                      isCollapsed && "justify-center"
+                    )}
                   >
                     <UserCircle className="h-5 w-5 shrink-0" />
-                    <div className="flex flex-col flex-1 min-w-0 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        {user?.displayUsername || user?.name || user?.username}
-                      </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {user?.role?.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    <ChevronUp className="ml-auto h-4 w-4" />
+                    {!isCollapsed && (
+                      <>
+                        <div className="flex flex-col flex-1 min-w-0 text-left text-sm leading-tight">
+                          <span className="truncate font-semibold">
+                            {user?.displayUsername ||
+                              user?.name ||
+                              user?.username}
+                          </span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {user?.role?.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <ChevronUp className="ml-auto h-4 w-4" />
+                      </>
+                    )}
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
