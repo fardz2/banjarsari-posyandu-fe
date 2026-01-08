@@ -18,7 +18,7 @@ export default function ListPageLayout({
 }: ListPageLayoutProps) {
   return (
     <div className={`flex flex-col gap-4 ${className || ""}`}>
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           {description && (
